@@ -31,7 +31,7 @@ const PollVote = db.define("poll_vote", {
   ],
   validate: {
     async matchOptionToPoll() {
-      const option = PollOption.findByPk(this.optionId);
+      const option = await PollOption.findByPk(this.optionId);
       if (this.pollId !== option.pollId)
         throw new ValidationError("Option does not belong to the specified poll");
     }
