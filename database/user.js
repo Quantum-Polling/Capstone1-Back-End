@@ -35,7 +35,7 @@ const User = db.define("user", {
   },
   avatarURL: {
     type: DataTypes.STRING,
-    defaultValue: "",
+    defaultValue: "https://static.thenounproject.com/png/5100711-200.png",
     validate: {
       isUrl: true,
     },
