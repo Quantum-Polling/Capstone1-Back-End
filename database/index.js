@@ -5,18 +5,18 @@ const PollOption = require("./poll_option");
 const PollVote = require("./poll_vote");
 
 // Create one to many relationship between User and Poll
-Poll.belongsTo(User, { as: "creator"});
-User.hasMany(Poll, { foreignKey: {
+Poll.belongsTo(User, { foreignKey: {
   name: "creatorId",
   allowNull: false,
 }});
+User.hasMany(Poll, { as: "creator"});
 
 // Create one to many relationship between Poll and PollOption
-PollOption.belongsTo(Poll);
-Poll.hasMany(PollOption, {foreignKey: {
+PollOption.belongsTo(Poll, { foreignKey: {
   name: "pollId",
   allowNull: false,
 }});
+Poll.hasMany(PollOption);
 
 // Create (zero or one) to many relationship between User and PollVote
 PollVote.belongsTo(User, { as: "voter", foreignKey: {
