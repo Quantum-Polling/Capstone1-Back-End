@@ -3,13 +3,10 @@ const db = require("./db");
 const bcrypt = require("bcrypt");
 
 const User = db.define("user", {
-  username: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true,
-    validate: {
-      len: [3, 20],
-    },
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true,
   },
   email: {
     type: DataTypes.STRING,
@@ -28,6 +25,27 @@ const User = db.define("user", {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  firstName: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  lastName: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  avatarURL: {
+    type: DataTypes.STRING,
+    defaultValue: "https://static.thenounproject.com/png/5100711-200.png",
+    allowNull: false,
+    validate: {
+      isUrl: true,
+    },
+  },
+  role: {
+    type: DataTypes.ENUM("User", "Admin"),
+    defaultValue: "User",
+    allowNull: false,
+  }
 });
 
 // Instance method to check password
