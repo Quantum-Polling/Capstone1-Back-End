@@ -37,9 +37,6 @@ const User = db.define("user", {
     type: DataTypes.STRING,
     defaultValue: "https://static.thenounproject.com/png/5100711-200.png",
     allowNull: false,
-    validate: {
-      isUrl: true,
-    },
   },
   role: {
     type: DataTypes.ENUM("User", "Admin"),

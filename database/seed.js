@@ -7,33 +7,50 @@ const seed = async () => {
     await db.sync({ force: true }); // Drop and recreate tables
 
     const users = await User.bulkCreate([
-      { email: "admin", 
-        passwordHash: User.hashPassword("admin123"), 
-        firstname: "Admin", 
-        lastname: "User",
+      {
+        email: "Mohammad",
+        passwordHash: User.hashPassword("admin123"),
+        firstName: "Mohammad",
+        lastName: "User",
+        avatarURL: "https://static.thenounproject.com/png/5100711-200.png",
+        role: "Admin",
       },
-      { email: "user1", 
-        passwordHash: User.hashPassword("user111"), 
-        firstname: "User", 
-        lastname: "One",
+      {
+        email: "Joseph",
+        passwordHash: User.hashPassword("user111"),
+        firstName: "Joseph",
+        lastName: "One",
+        avatarURL: "https://static.thenounproject.com/png/5100711-200.png",
+        role: "User",
       },
-      { email: "user2", 
-        passwordHash: User.hashPassword("user222"), 
-        firstname: "User", 
-        lastname: "Two",
+      {
+        email: "Pedro",
+        passwordHash: User.hashPassword("user222"),
+        firstName: "Pedro",
+        lastName: "Two",
+        avatarURL: "https://static.thenounproject.com/png/5100711-200.png",
+        role: "User",
+      },
+      {
+        email: "Michelangelo",
+        passwordHash: User.hashPassword("user222"),
+        firstName: "Michelangelo",
+        lastName: "Three",
+        avatarURL: "https://static.thenounproject.com/png/5100711-200.png",
+        role: "User",
       },
     ]);
 
     console.log(`👤 Created ${users.length} users`);
 
     const polls = await Poll.bulkCreate([
-      { 
-        title: "What to watch", 
+      {
+        title: "What to watch",
         description: "It's movie night! What should we watch?",
         creatorId: 1,
       },
-      { 
-        title: "What to eat", 
+      {
+        title: "What to eat",
         description: "Help us decided what to get for dinner!",
         creatorId: 2,
       },

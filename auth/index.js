@@ -104,37 +104,38 @@ router.post("/auth0", async (req, res) => {
 // Signup route
 router.post("/signup", async (req, res) => {
   try {
-    const { email, password, firstname, lastname, avatarUrl } = req.body;
+    const { email, password, firstname, lastname, avatarurl } = req.body;
 
-    if (!email || !password || !firstname || !lastname || !avatarUrl) {
-      return res
-        .status(400)
-        .send({ error: "All fields are required" });
+    if (!email || !password || !firstname || !lastname || !avatarurl) {
+      return res.status(400).send({ error: "All fields are required" });
     }
 
     if (password.length < 6) {
-      return res
-        .status(400)
-        .send({ error: "Password must be at least 6 characters long" });
+      return res.status(400).send({ error: "Password must be at least 6 characters long" });
     }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ where: { username } });
+    const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return res.status(409).send({ error: "Username already exists" });
+      return res.status(409).send({ error: "Email already exists" });
     }
 
-    // Create new user
     const passwordHash = User.hashPassword(password);
-    const user = await User.create({ username, passwordHash });
 
-    // Generate JWT token
+    const user = await User.create({
+      email,
+      passwordHash,
+      firstName: firstname,
+      lastName: lastname,
+      avatarURL: avatarurl,
+    });
+
     const token = jwt.sign(
       {
         id: user.id,
-        username: user.username,
-        auth0Id: user.auth0Id,
         email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
@@ -142,14 +143,20 @@ router.post("/signup", async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     });
 
     res.send({
       message: "User created successfully",
-      user: { id: user.id, username: user.username },
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarURL: user.avatarURL,
+      },
     });
   } catch (error) {
     console.error("Signup error:", error);
@@ -157,12 +164,13 @@ router.post("/signup", async (req, res) => {
   }
 });
 
+
 // Login route
 router.post("/login", async (req, res) => {
   try {
-    const { email, password, firstname, lastname, avatarUrl } = req.body;
+    const { email, password } = req.body;
 
-    if (!email || !password || !firstname || !lastname || !avatarUrl) {
+    if (!email || !password) {
       res.status(400).send({ error: "All fields are required" });
       return;
     }
