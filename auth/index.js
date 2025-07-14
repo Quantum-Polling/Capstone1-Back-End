@@ -71,9 +71,11 @@ router.post("/auth0", async (req, res) => {
     const token = jwt.sign(
       {
         id: user.id,
-        username: user.username,
         auth0Id: user.auth0Id,
         email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarURL: user.avatarURL,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
@@ -90,9 +92,11 @@ router.post("/auth0", async (req, res) => {
       message: "Auth0 authentication successful",
       user: {
         id: user.id,
-        username: user.username,
         auth0Id: user.auth0Id,
         email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarURL: user.avatarURL,
       },
     });
   } catch (error) {
@@ -137,6 +141,7 @@ router.post("/signup", async (req, res) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        avatarURL: user.avatarURL,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
@@ -192,9 +197,11 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign(
       {
         id: user.id,
-        username: user.username,
         auth0Id: user.auth0Id,
         email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarURL: user.avatarURL,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
