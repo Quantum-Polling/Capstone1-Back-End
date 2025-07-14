@@ -104,12 +104,12 @@ router.post("/auth0", async (req, res) => {
 // Signup route
 router.post("/signup", async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { email, password, firstname, lastname, avatarUrl } = req.body;
 
-    if (!username || !password) {
+    if (!email || !password || !firstname || !lastname || !avatarUrl) {
       return res
         .status(400)
-        .send({ error: "Username and password are required" });
+        .send({ error: "All fields are required" });
     }
 
     if (password.length < 6) {
@@ -160,15 +160,15 @@ router.post("/signup", async (req, res) => {
 // Login route
 router.post("/login", async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { email, password, firstname, lastname, avatarUrl } = req.body;
 
-    if (!username || !password) {
-      res.status(400).send({ error: "Username and password are required" });
+    if (!email || !password || !firstname || !lastname || !avatarUrl) {
+      res.status(400).send({ error: "All fields are required" });
       return;
     }
 
     // Find user
-    const user = await User.findOne({ where: { username } });
+    const user = await User.findOne({ where: { email } });
     user.checkPassword(password);
     if (!user) {
       return res.status(401).send({ error: "Invalid credentials" });
