@@ -72,9 +72,11 @@ router.post("/auth0", async (req, res) => {
     const token = jwt.sign(
       {
         id: user.id,
-        username: user.username,
         auth0Id: user.auth0Id,
         email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarURL: user.avatarURL,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
@@ -91,9 +93,11 @@ router.post("/auth0", async (req, res) => {
       message: "Auth0 authentication successful",
       user: {
         id: user.id,
-        username: user.username,
         auth0Id: user.auth0Id,
         email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarURL: user.avatarURL,
       },
     });
   } catch (error) {
@@ -138,6 +142,7 @@ router.post("/signup", async (req, res) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        avatarURL: user.avatarURL,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
@@ -193,9 +198,11 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign(
       {
         id: user.id,
-        username: user.username,
         auth0Id: user.auth0Id,
         email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarURL: user.avatarURL,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
@@ -210,7 +217,14 @@ router.post("/login", async (req, res) => {
 
     res.send({
       message: "Login successful",
-      user: { id: user.id, username: user.username },
+      user: {
+        id: user.id,
+        auth0Id: user.auth0Id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarURL: user.avatarURL,
+      },
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -236,7 +250,14 @@ router.get("/me", (req, res) => {
     if (err) {
       return res.status(403).send({ error: "Invalid or expired token" });
     }
-    res.send({ user: user });
+    res.send({
+      user: user,
+      auth0Id: user.auth0Id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      avatarURL: user.avatarURL,
+    });
   });
 });
 
