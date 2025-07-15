@@ -28,7 +28,7 @@ const Poll = db.define("poll", {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
     allowNull: false,
-  }
+  },
 });
 
 module.exports = Poll;
