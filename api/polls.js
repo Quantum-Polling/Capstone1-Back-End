@@ -39,8 +39,13 @@ router.post("/", async (req, res) => {
       creatorId: pollInfo.creatorId,
     });
 
-    if (pollInfo.options)
-      await PollOption.bulkCreate(pollInfo.options);
+    if (pollInfo.options) {
+      const options = pollInfo.options.map((opt) => ({
+        text: opt,
+        pollId: poll.id
+      }));
+      await PollOption.bulkCreate(options);
+    }
 
     if (pollInfo.status === "Draft")
       res.status(201).send({ message: "Successfully saved new poll draft" });
