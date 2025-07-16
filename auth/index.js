@@ -11,6 +11,8 @@ const authenticateJWT = (req, res, next) => {
   const token = req.cookies.token;
 
   if (!token) {
+    console.log("We found it");
+    console.log(req.cookies);
     return res.status(401).send({ error: "Access token required" });
   }
 
@@ -19,8 +21,19 @@ const authenticateJWT = (req, res, next) => {
       return res.status(403).send({ error: "Invalid or expired token" });
     }
     req.user = user;
+    console.log(req.user);
     next();
   });
+};
+
+// isAdmin MiddleWare
+const isAdmin = (req, res, next) => {
+  console.log("Admins req: ", req.user);
+  if (req.user.role !== "admin") {
+    console.log("Not Admin");
+    return res.status(403).json({ message: "Admins only" });
+  }
+  next();
 };
 
 // Auth0 authentication route
@@ -76,6 +89,7 @@ router.post("/auth0", async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         avatarURL: user.avatarURL,
+        role: user.role,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
@@ -97,6 +111,7 @@ router.post("/auth0", async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         avatarURL: user.avatarURL,
+        role: user.role,
       },
     });
   } catch (error) {
@@ -115,7 +130,9 @@ router.post("/signup", async (req, res) => {
     }
 
     if (password.length < 6) {
-      return res.status(400).send({ error: "Password must be at least 6 characters long" });
+      return res
+        .status(400)
+        .send({ error: "Password must be at least 6 characters long" });
     }
 
     // Check if user already exists
@@ -142,6 +159,7 @@ router.post("/signup", async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         avatarURL: user.avatarURL,
+        role: user.role,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
@@ -162,6 +180,7 @@ router.post("/signup", async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         avatarURL: user.avatarURL,
+        role: user.role,
       },
     });
   } catch (error) {
@@ -169,7 +188,6 @@ router.post("/signup", async (req, res) => {
     res.sendStatus(500);
   }
 });
-
 
 // Login route
 router.post("/login", async (req, res) => {
@@ -202,6 +220,7 @@ router.post("/login", async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         avatarURL: user.avatarURL,
+        role: user.role,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
@@ -223,6 +242,7 @@ router.post("/login", async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         avatarURL: user.avatarURL,
+        role: user.role,
       },
     });
   } catch (error) {
@@ -238,26 +258,66 @@ router.post("/logout", (req, res) => {
 });
 
 // Get current user route (protected)
-router.get("/me", (req, res) => {
-  const token = req.cookies.token;
+router.get("/me", async (req, res) => {
+  try {
+    const token = req.cookies.token;
 
-  if (!token) {
-    return res.send({});
-  }
-
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).send({ error: "Invalid or expired token" });
+    if (!token) {
+      return res.send({});
     }
-    res.send({
-      user: user,
-      auth0Id: user.auth0Id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      avatarURL: user.avatarURL,
+
+    console.log("auth me token", token);
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+      if (err) {
+        return res.status(403).send({ error: "Invalid or expired token" });
+      }
+      console.log("user", user);
+      res.send({
+        user: user,
+        auth0Id: user.auth0Id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarURL: user.avatarURL,
+        role: user.role,
+      });
     });
-  });
+  } catch (err) {
+    console.error(err);
+    res.sendStatus(500);
+  }
+});
+
+// Get all users if user isAdmin
+router.get("/users", async (req, res) => {
+  try {
+    const token = req.cookies.token;
+
+    if (!token) {
+      return res.sendStatus(401);
+    }
+
+    // check token
+    let user;
+    try {
+      user = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(403).json({ error: "Invalid or expired token" });
+    }
+
+    // check if user isadmin
+    if (user.role.toLowerCase() !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    const users = await User.findAll({
+      attributes: ["id", "firstName", "lastName", "email", "avatarURL", "role"],
+    });
+    res.status(200).send(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
 });
 
 module.exports = { router, authenticateJWT };
