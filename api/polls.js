@@ -51,6 +51,16 @@ router.patch("/:userId/:id", async (req, res) => {
     const pollId = Number(req.params.id);
     const userId = Number(req.params.userId);
     const poll = await Poll.findByPk(pollId);
+    
+    // Validate that this user doesn't already have a poll with this title
+    const duplicate = await Poll.findOne({
+      where: { 
+        creatorId: pollInfo.creatorId,
+        title: pollInfo.title 
+      }
+    });
+    if (duplicate)
+      return res.status(409).send("A poll with this title already exists for this user");
 
     // Validate that the poll to be edited exists
     if (!poll)
