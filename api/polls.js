@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { Poll } = require("../database");
+const { Poll, PollOption } = require("../database");
 
 router.get("/", async (req, res) => {
   try {
@@ -16,6 +16,10 @@ router.post("/", async (req, res) => {
   try {
     const pollInfo = req.body;
 
+    // Validate that there are at least 2 options if the user is publishing
+    if (pollInfo.options && pollInfo.options.length < 2 && pollInfo.status === "Open")
+      return res.status(422).send({ message: "Not enough options to publish poll" });
+
     // Validate that this user doesn't already have a poll with this title
     const duplicate = await Poll.findOne({
       where: { 
@@ -24,7 +28,7 @@ router.post("/", async (req, res) => {
       }
     });
     if (duplicate)
-      return res.status(409).send("A poll with this title already exists for this user");
+      return res.status(409).send({ message: "A poll with this title already exists for this user" });
 
     const poll = await Poll.create({
       title: pollInfo.title,
@@ -34,6 +38,9 @@ router.post("/", async (req, res) => {
       authVotes: !pollInfo.open,
       creatorId: pollInfo.creatorId,
     });
+
+    if (pollInfo.options)
+      await PollOption.bulkCreate(pollInfo.options);
 
     if (pollInfo.status === "Draft")
       res.status(201).send({ message: "Successfully saved new poll draft" });
