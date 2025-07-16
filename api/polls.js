@@ -40,7 +40,7 @@ router.post("/", async (req, res) => {
     else
       res.status(201).send({ message: "Successfully published new poll", pollId: poll.id });
   } catch (error) {
-    res.status(500).send({ error: "Error creating new poll:", error });
+    res.status(500).send({ error: `Error creating new poll: ${error}` });
   }
 });
 
