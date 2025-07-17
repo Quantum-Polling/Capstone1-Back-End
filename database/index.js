@@ -50,6 +50,10 @@ PollVote.belongsTo(Poll, {
   },
 });
 
+Poll.hasMany(PollOption, {
+  foreignKey: "pollId",
+});
+
 module.exports = {
   db,
   User,

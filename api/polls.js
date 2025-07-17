@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const { Poll, PollOption, User } = require("../database");
+const { Poll, PollOption, User, PollVote } = require("../database");
+const { Sequelize } = require("sequelize");
 
 // router.get("/", async (req, res) => {
 //   try {
@@ -20,6 +21,14 @@ router.get("/", async (req, res) => {
         attributes: [
           ["firstName", "creatorFirstName"],
           ["lastName", "creatorLastName"],
+        ],
+      },
+
+      include: {
+        model: PollOption,
+        as: "options"[
+          (Sequelize.fn("COUNT", Sequelize.col("options.pollId")),
+          "totalOptions")
         ],
       },
     });
