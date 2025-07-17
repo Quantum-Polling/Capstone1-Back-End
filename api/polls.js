@@ -60,31 +60,20 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const pollInfo = req.body;
-    // Published
-    // Verify that there are at least two options
-    // Verify that the user doesn't already have a poll with the given title
-    // Verify that the title, description, and each option are not empty
-    // Create new poll
-    // Create new options
+
+    // Poll is set to be published
+    if (pollInfo.status === "Open") {
+      // Validate that the poll can be published
+      const publishability = await isPublishable(pollInfo);
+      if (!(publishability.publishable))
+        return res.status(422).send({errors: publishability.errors});
+    }
 
     // Draft
     // Fill any empty fields (title, description, or options) with placeholders
+
     // Create new poll
     // Create new options
-
-    // Validate that there are at least 2 options if the user is publishing
-    if (pollInfo.options && pollInfo.options.length < 2 && pollInfo.status === "Open")
-      return res.status(422).send({ error: "Not enough options to publish poll" });
-
-    // Validate that this user doesn't already have a poll with this title
-    const duplicate = await Poll.findOne({
-      where: { 
-        creatorId: pollInfo.creatorId,
-        title: pollInfo.title 
-      }
-    });
-    if (duplicate)
-      return res.status(409).send({ error: "A poll with this title already exists for this user" });
 
     const poll = await Poll.create({
       title: pollInfo.title,
@@ -124,10 +113,14 @@ router.patch("/:userId/:id", async (req, res) => {
     // Verify Poll is in draft state
     // Verify User is the creator of the Poll
 
-    // Published
-    // Verify that there are at least two options
-    // Verify that the user doesn't already have a poll with the given title
-    // Verify that the title, description, and each option are not empty
+    // Poll is set to be published
+    if (pollInfo.status === "Open") {
+      // Validate that the poll can be published
+      const publishability = await isPublishable(pollInfo);
+      if (!(publishability.publishable))
+        return res.status(422).send({errors: publishability.errors});
+    }
+
     // Update existing poll data
     // Update existing options text
     // - If more options exist in the database than were published, delete the extra ones
@@ -138,16 +131,6 @@ router.patch("/:userId/:id", async (req, res) => {
     // Update existing poll data
     // Update existing options text
     // - If more options are published than exist in the database, add the new ones
-
-    // Validate that this user doesn't already have a poll with this title
-    const duplicate = await Poll.findOne({
-      where: { 
-        creatorId: pollInfo.creatorId,
-        title: pollInfo.title 
-      }
-    });
-    if (duplicate)
-      return res.status(409).send("A poll with this title already exists for this user");
 
     // Validate that the poll to be edited exists
     if (!poll)
