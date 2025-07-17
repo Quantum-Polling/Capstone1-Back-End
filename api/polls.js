@@ -64,6 +64,15 @@ const fillEmptyFields = (poll) => {
       option[i] = `[OPTION PLACEHOLDER ${i + 1}]`;
 };
 
+// Formats the array of options as objects ready for database insertion
+// Returns the array of formatted options
+const formattedOptions = (options, pollId) => {
+  return options.map((option) => ({
+    text: option,
+    pollId: pollId
+  }));
+}
+
 router.get("/", async (req, res) => {
   try {
     const result = await Poll.findAll();
@@ -103,10 +112,7 @@ router.post("/", async (req, res) => {
     
     // Create new options
     if (pollInfo.options) {
-      const options = pollInfo.options.map((opt) => ({
-        text: opt,
-        pollId: poll.id
-      }));
+      const options = formattedOptions(pollInfo.options, poll.id);
       await PollOption.bulkCreate(options);
     }
 
@@ -149,22 +155,40 @@ router.patch("/:userId/:id", async (req, res) => {
     // Poll is set to be saved as a draft
     else {
       // Fill any empty fields (title, description, or options) with placeholders
-      fillEmptyFields(pollInfo);
+      fillEmptyFields(newPollInfo);
     }
-        
-    // Update existing poll data
-    // Update existing options text
-    // - (polls to be published only) If more options exist in the database than were published, delete the extra ones
-    // - If more options are published than exist in the database, add the new ones
-
-    // Update the poll
-    poll.update({
+    
+    // Update the existing poll's options
+    await poll.update({
       title: newPollInfo.title,
       description: newPollInfo.description,
       status: newPollInfo.status,
       closeDate: newPollInfo.closeDate,
       authVotes: !newPollInfo.open,
     });
+
+    // Format the options to be saved
+    const newOptions = formattedOptions(newPollInfo.options, pollId);
+
+    // Get the existing options
+    const existingOptions = await PollOption.findAll({ where: { pollId: pollId }});
+
+    // Update options
+    let i = 0;
+    while (i < existingOptions.length){
+      // Update existing options text
+      if (i < newOptions.length)
+        existingOptions[i].update({ text: newOptions[i].text });
+      // Delete extraneous existing options (for polls to be published only)
+      else if (newPollInfo.status === "Open")
+        existingOptions[i].destroy();
+      
+      i++;
+    }
+
+    // Create any remaining new options
+    if (i < newOptions.length)
+      await PollOption.bulkCreate(newOptions.slice(i));
 
     res.status(200).send({ message: "Succesfully updated poll" });
   } catch (error) {
