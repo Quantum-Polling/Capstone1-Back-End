@@ -104,53 +104,46 @@ router.post("/", async (req, res) => {
 // Edit a poll
 router.patch("/:userId/:id", async (req, res) => {
   try {
-    const pollInfo = req.body;
+    const newPollInfo = req.body;
     const pollId = Number(req.params.id);
     const userId = Number(req.params.userId);
     const poll = await Poll.findByPk(pollId);
     
-    // Verify Poll exists
-    // Verify Poll is in draft state
-    // Verify User is the creator of the Poll
-
-    // Poll is set to be published
-    if (pollInfo.status === "Open") {
-      // Validate that the poll can be published
-      const publishability = await isPublishable(pollInfo);
-      if (!(publishability.publishable))
-        return res.status(422).send({errors: publishability.errors});
-    }
-
-    // Update existing poll data
-    // Update existing options text
-    // - If more options exist in the database than were published, delete the extra ones
-    // - If more options are published than exist in the database, add the new ones
-
-    // Draft
-    // Fill any empty fields (title, description, or options) with placeholders
-    // Update existing poll data
-    // Update existing options text
-    // - If more options are published than exist in the database, add the new ones
-
     // Validate that the poll to be edited exists
     if (!poll)
       return res.status(404).send({ error: `Poll with ID ${pollId} not found` });
-
+    
+    // Validate that the poll can be edited
+    if (poll.status !== "Draft")
+      return res.status(403).send({ error: `Poll with ID ${pollId} was already published and cannot be edited` });
+    
     // Validate that the user is allowed to edit this poll
     if (poll.creatorId !== userId)
       return res.status(403).send({ error: "You are not the creator of this poll and thus cannot edit it" });
 
-    // Validate that the poll can be edited
-    if (poll.status !== "Draft")
-      return res.status(403).send({ error: `Poll with ID ${pollId} was already published and cannot be edited` });
+    // Poll is set to be published
+    if (newPollInfo.status === "Open") {
+      // Validate that the poll can be published
+      const publishability = await isPublishable(newPollInfo);
+      if (!(publishability.publishable))
+        return res.status(422).send({errors: publishability.errors});
+    }
+    
+    // Draft
+    // Fill any empty fields (title, description, or options) with placeholders
+    
+    // Update existing poll data
+    // Update existing options text
+    // - (polls to be published only) If more options exist in the database than were published, delete the extra ones
+    // - If more options are published than exist in the database, add the new ones
 
     // Update the poll
     poll.update({
-      title: pollInfo.title,
-      description: pollInfo.description,
-      status: pollInfo.status,
-      closeDate: pollInfo.closeDate,
-      authVotes: !pollInfo.open,
+      title: newPollInfo.title,
+      description: newPollInfo.description,
+      status: newPollInfo.status,
+      closeDate: newPollInfo.closeDate,
+      authVotes: !newPollInfo.open,
     });
 
     res.status(200).send({ message: "Succesfully updated poll" });
