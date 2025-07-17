@@ -47,6 +47,23 @@ const isPublishable = async (poll) => {
   return response;
 }
 
+// Fills any empty fields with placeholder values
+// This should only be done on polls saved as drafts
+const fillEmptyFields = (poll) => {
+  if (poll.status !== "Draft")
+    return;
+
+  if (!poll.title.trim())
+    poll.title = "Untitled Poll";
+
+  if (!poll.description.trim())
+    poll.description = "[DRAFT]";
+
+  for (let i = 0; i < poll.options.length; i++)
+    if (!option[i].trim())
+      option[i] = `[OPTION PLACEHOLDER ${i + 1}]`;
+};
+
 router.get("/", async (req, res) => {
   try {
     const result = await Poll.findAll();
@@ -67,14 +84,14 @@ router.post("/", async (req, res) => {
       const publishability = await isPublishable(pollInfo);
       if (!(publishability.publishable))
         return res.status(422).send({errors: publishability.errors});
+    } 
+    // Poll is set to be saved as a draft
+    else {
+      // Fill any empty fields (title, description, or options) with placeholders
+      fillEmptyFields(pollInfo);
     }
 
-    // Draft
-    // Fill any empty fields (title, description, or options) with placeholders
-
     // Create new poll
-    // Create new options
-
     const poll = await Poll.create({
       title: pollInfo.title,
       description: pollInfo.description,
@@ -83,7 +100,8 @@ router.post("/", async (req, res) => {
       authVotes: !pollInfo.open,
       creatorId: pollInfo.creatorId,
     });
-
+    
+    // Create new options
     if (pollInfo.options) {
       const options = pollInfo.options.map((opt) => ({
         text: opt,
@@ -128,10 +146,12 @@ router.patch("/:userId/:id", async (req, res) => {
       if (!(publishability.publishable))
         return res.status(422).send({errors: publishability.errors});
     }
-    
-    // Draft
-    // Fill any empty fields (title, description, or options) with placeholders
-    
+    // Poll is set to be saved as a draft
+    else {
+      // Fill any empty fields (title, description, or options) with placeholders
+      fillEmptyFields(pollInfo);
+    }
+        
     // Update existing poll data
     // Update existing options text
     // - (polls to be published only) If more options exist in the database than were published, delete the extra ones
