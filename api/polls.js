@@ -30,10 +30,10 @@ const isPublishable = async (poll) => {
     response.errors = [...response.errors, "A poll with this title already exists for this user"];
 
   // Verify that the title, description, and options are all not empty
-  if (!title.trim())
+  if (!poll.title.trim())
     response.errors = [...response.errors, "Title cannot be empty"];
 
-  if (!description.trim())
+  if (!poll.description.trim())
     response.errors = [...response.errors, "Description cannot be empty"];
 
   for (let i = 0; i < poll.options.length; i++)
