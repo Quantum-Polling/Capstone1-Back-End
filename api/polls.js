@@ -5,7 +5,7 @@ const { Poll, PollOption } = require("../database");
 // Validates if the given poll can be published
 // Returns an object with the boolean 'publishable' and
 // an array 'errors' with any errors if not publishable
-const isPublishable = async (poll) => {
+const isPublishable = async (poll, creatorId, pollId = -1) => {
   const response = {
     publishable: false,
     errors: []
@@ -22,11 +22,11 @@ const isPublishable = async (poll) => {
   // Verify that the user doesn't already have a poll with the given title
   const duplicate = await Poll.findOne({
       where: { 
-        creatorId: poll.creatorId,
+        creatorId: creatorId,
         title: poll.title 
       }
     });
-  if (duplicate)
+  if (duplicate && duplicate.id !== pollId)
     response.errors = [...response.errors, "A poll with this title already exists for this user"];
 
   // Verify that the title, description, and options are all not empty
@@ -37,7 +37,7 @@ const isPublishable = async (poll) => {
     response.errors = [...response.errors, "Description cannot be empty"];
 
   for (let i = 0; i < poll.options.length; i++)
-    if (!option[i].trim())
+    if (!poll.options[i].trim())
       response.errors = [...response.errors, `Option ${i + 1} cannot be empty`];
   
   // All verifications passed
@@ -60,8 +60,8 @@ const fillEmptyFields = (poll) => {
     poll.description = "[DRAFT]";
 
   for (let i = 0; i < poll.options.length; i++)
-    if (!option[i].trim())
-      option[i] = `[OPTION PLACEHOLDER ${i + 1}]`;
+    if (!poll.options[i].trim())
+      poll.options[i] = `[OPTION PLACEHOLDER ${i + 1}]`;
 };
 
 // Formats the array of options as objects ready for database insertion
@@ -90,7 +90,7 @@ router.post("/", async (req, res) => {
     // Poll is set to be published
     if (pollInfo.status === "Open") {
       // Validate that the poll can be published
-      const publishability = await isPublishable(pollInfo);
+      const publishability = await isPublishable(pollInfo, pollInfo.creatorId);
       if (!(publishability.publishable))
         return res.status(422).send({errors: publishability.errors});
     } 
@@ -126,7 +126,7 @@ router.post("/", async (req, res) => {
 });
 
 // Edit a poll
-router.patch("/:userId/:id", async (req, res) => {
+router.patch("/:userId/edit/:id", async (req, res) => {
   try {
     const newPollInfo = req.body;
     const pollId = Number(req.params.id);
@@ -148,7 +148,7 @@ router.patch("/:userId/:id", async (req, res) => {
     // Poll is set to be published
     if (newPollInfo.status === "Open") {
       // Validate that the poll can be published
-      const publishability = await isPublishable(newPollInfo);
+      const publishability = await isPublishable(newPollInfo, userId, pollId);
       if (!(publishability.publishable))
         return res.status(422).send({errors: publishability.errors});
     }
