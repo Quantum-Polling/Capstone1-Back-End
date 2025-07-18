@@ -8,37 +8,40 @@ const seed = async () => {
 
     const users = await User.bulkCreate([
       {
-        email: "Mohammad",
-        passwordHash: User.hashPassword("admin123"),
-        firstName: "Mohammad",
-        lastName: "User",
-        avatarURL: "https://static.thenounproject.com/png/5100711-200.png",
+        email: "Mohammed@example.com",
+        passwordHash: User.hashPassword("user111"),
+        firstName: "Mohammed",
+        lastName: "Islam",
         role: "Admin",
       },
       {
-        email: "Joseph",
-        passwordHash: User.hashPassword("user111"),
+        email: "Joseph@example.com",
+        passwordHash: User.hashPassword("user222"),
         firstName: "Joseph",
-        lastName: "One",
-        avatarURL: "https://static.thenounproject.com/png/5100711-200.png",
-        role: "User",
+        lastName: "Collado",
+        role: "Admin",
       },
       {
-        email: "Pedro",
-        passwordHash: User.hashPassword("user222"),
+        email: "Pedro@example.com",
+        passwordHash: User.hashPassword("user333"),
         firstName: "Pedro",
-        lastName: "Two",
-        avatarURL: "https://static.thenounproject.com/png/5100711-200.png",
-        role: "User",
+        lastName: "Ortega",
+        role: "Admin",
       },
       {
-        email: "Michelangelo",
-        passwordHash: User.hashPassword("user222"),
-        firstName: "Michelangelo",
-        lastName: "Three",
-        avatarURL: "https://static.thenounproject.com/png/5100711-200.png",
-        role: "User",
+        email: "Michaelangelo@example.com",
+        passwordHash: User.hashPassword("user444"),
+        firstName: "Michaelangelo",
+        lastName: "Javier",
+        role: "Admin",
       },
+      {
+        email: "Test@example.com",
+        passwordHash: User.hashPassword("user555"),
+        firstName: "Test",
+        lastName: "Testerson",
+        role: "User",
+      }
     ]);
 
     console.log(`👤 Created ${users.length} users`);
@@ -47,12 +50,23 @@ const seed = async () => {
       {
         title: "What to watch",
         description: "It's movie night! What should we watch?",
+        status: "Open",
+        close_date: "2025-07-25",
         creatorId: 1,
       },
       {
         title: "What to eat",
         description: "Help us decided what to get for dinner!",
+        status: "Open",
+        close_date: null,
         creatorId: 2,
+      },
+      {
+        title: "Example Poll",
+        description: "This is a sample draft poll",
+        status: "Draft",
+        close_date: null,
+        creatorId: 5,
       },
     ]);
 
@@ -74,6 +88,9 @@ const seed = async () => {
       { pollId: 2, text: "Wings" },
       { pollId: 2, text: "KBBQ" },
       { pollId: 2, text: "Venezuelan" },
+
+      { pollId: 3, text: "Example Option #1" },
+      { pollId: 3, text: "Example Option #2" },
     ]);
 
     console.log(`📑 Created ${options.length} poll options`);
