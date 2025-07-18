@@ -50,6 +50,10 @@ PollVote.belongsTo(Poll, {
   },
 });
 
+Poll.hasMany(PollVote, {
+  foreignKey: { name: "pollId" },
+});
+
 Poll.hasMany(PollOption, {
   foreignKey: "pollId",
 });
