@@ -105,7 +105,7 @@ router.post("/", async (req, res) => {
       title: pollInfo.title,
       description: pollInfo.description,
       status: pollInfo.status,
-      closeDate: pollInfo.closeDate,
+      close_date: pollInfo.closeDate,
       authVotes: !pollInfo.open,
       creatorId: pollInfo.creatorId,
     });
@@ -163,7 +163,7 @@ router.patch("/:userId/edit/:id", async (req, res) => {
       title: newPollInfo.title,
       description: newPollInfo.description,
       status: newPollInfo.status,
-      closeDate: newPollInfo.closeDate,
+      close_date: newPollInfo.closeDate,
       authVotes: !newPollInfo.open,
     });
 
