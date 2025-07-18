@@ -51,7 +51,7 @@ const seed = async () => {
         title: "What to watch",
         description: "It's movie night! What should we watch?",
         status: "Open",
-        close_date: "07-25-2025",
+        close_date: "2025-07-25",
         creatorId: 1,
       },
       {
