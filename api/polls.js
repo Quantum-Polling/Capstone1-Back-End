@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { Poll, PollOption } = require("../database");
+const { Sequelize } = require("sequelize");
 
 // Validates if the given poll can be published
 // Returns an object with the boolean 'publishable' and
@@ -82,6 +83,31 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Get a poll by id
+router.get("/:id", async (req, res) => {
+  const pollId = Number(req.params.id);
+  try {
+    const rawPoll = await Poll.findByPk(pollId, {
+      include: {
+        model: PollOption,
+        attributes: ['text'],
+      },
+      order: [
+        [{ model: PollOption }, Sequelize.col('id')],
+      ]
+    });
+    const poll = rawPoll.toJSON();
+
+    // Validate that the poll exists
+    if (!poll)
+      return res.status(404).send({ error: `Poll with ID ${pollId} not found` });
+
+    res.status(200).send({ message: `Successfully retrieved poll`, poll: poll});
+  } catch (error) {
+    res.status(500).send({ error: `Error getting poll with ID ${pollId}: ${error}` });
+  }
+});
+
 // Create a new poll
 router.post("/", async (req, res) => {
   try {
@@ -117,7 +143,7 @@ router.post("/", async (req, res) => {
     }
 
     if (pollInfo.status === "Draft")
-      res.status(201).send({ message: "Successfully saved new poll draft" });
+      res.status(201).send({ message: "Successfully saved new poll draft", pollId: poll.id });
     else
       res.status(201).send({ message: "Successfully published new poll", pollId: poll.id });
   } catch (error) {
