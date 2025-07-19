@@ -27,14 +27,6 @@ const authenticateJWT = (req, res, next) => {
 };
 
 // isAdmin MiddleWare
-const isAdmin = (req, res, next) => {
-  console.log("Admins req: ", req.user);
-  if (req.user.role !== "admin") {
-    console.log("Not Admin");
-    return res.status(403).json({ message: "Admins only" });
-  }
-  next();
-};
 
 // Auth0 authentication route
 router.post("/auth0", async (req, res) => {
@@ -319,5 +311,7 @@ router.get("/users", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch users" });
   }
 });
+
+//Disable user
 
 module.exports = { router, authenticateJWT };
