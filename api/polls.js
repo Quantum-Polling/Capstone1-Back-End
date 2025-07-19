@@ -96,12 +96,12 @@ router.get("/:id", async (req, res) => {
         [{ model: PollOption }, Sequelize.col('id')],
       ]
     });
-    const poll = rawPoll.toJSON();
-
+    
     // Validate that the poll exists
-    if (!poll)
+    if (!rawPoll)
       return res.status(404).send({ error: `Poll with ID ${pollId} not found` });
-
+    
+    const poll = rawPoll.toJSON();
     res.status(200).send({ message: `Successfully retrieved poll`, poll: poll});
   } catch (error) {
     res.status(500).send({ error: `Error getting poll with ID ${pollId}: ${error}` });
