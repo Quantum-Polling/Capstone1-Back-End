@@ -21,6 +21,7 @@ router.get("/", async (req, res) => {
         },
         {
           model: PollVote,
+          where: { rank: 1 },
           as: [Sequelize.fn("COUNT", Sequelize.col("pollId"))],
         },
       ],
