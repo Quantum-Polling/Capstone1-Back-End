@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { Poll, PollOption } = require("../database");
 const { Sequelize } = require("sequelize");
+const { authenticateJWT } = require("../auth");
 
 // Validates if the given poll can be published
 // Returns an object with the boolean 'publishable' and
@@ -109,7 +110,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // Create a new poll
-router.post("/", async (req, res) => {
+router.post("/", authenticateJWT, async (req, res) => {
   try {
     const pollInfo = req.body;
 
@@ -152,7 +153,7 @@ router.post("/", async (req, res) => {
 });
 
 // Edit a poll
-router.patch("/:userId/edit/:id", async (req, res) => {
+router.patch("/:userId/edit/:id", authenticateJWT, async (req, res) => {
   try {
     const newPollInfo = req.body;
     const pollId = Number(req.params.id);
