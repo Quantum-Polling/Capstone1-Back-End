@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { Poll, PollOption } = require("../database");
+const { Poll, PollOption, PollVote } = require("../database");
 const { Sequelize } = require("sequelize");
 const { authenticateJWT } = require("../auth");
 
@@ -247,13 +247,35 @@ router.patch("/:userId/edit/:id", authenticateJWT, async (req, res) => {
 router.get("/:id/results", async (req, res) => {
   const id = req.params.id;
   try {
+    // Verify that the poll exists
+    const poll = await Poll.findByPk(id);
+    if (!poll)
+      return res.status(404).send({error: `Could not find poll with ID ${id}`});
+
     // Check if the results have already been calculated and stored
     // If so, return the results from the table
     // Otherwise run the calculation algorithm
   
     // Calculate the results
     // Get the total number of options
+    const numOptions = await PollOption.count({ where: { pollId: id } });
+    if (numOptions === 0)
+      return res.status(404).send({error: `Could not find options for poll with ID ${id}`});
+
     // Get all the votes
+    const votes = await PollVote.findAll({
+      where: { 
+        pollId: id, 
+        submitted: true 
+      },
+      order: [['userId'], ['rank']],
+      attributes: [
+        ['userId', 'voterId'],
+        'rank',
+        'optionId'
+      ]
+    })
+    
     // Convert all votes into an array of ballots
     // Create arrays for eliminated options and final results
     // For each round:
