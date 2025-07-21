@@ -9,7 +9,10 @@ Poll.belongsTo(User, { foreignKey: {
   name: "creatorId",
   allowNull: false,
 }});
-User.hasMany(Poll, { as: "creator"});
+User.hasMany(Poll, {
+  foreignKey: "creatorId",
+  as: "polls",
+});
 
 // Create one to many relationship between Poll and PollOption
 PollOption.belongsTo(Poll, { foreignKey: {
