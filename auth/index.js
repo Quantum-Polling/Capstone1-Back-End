@@ -82,6 +82,7 @@ router.post("/auth0", async (req, res) => {
         lastName: user.lastName,
         avatarURL: user.avatarURL,
         role: user.role,
+        disabled: user.disabled,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
@@ -104,6 +105,7 @@ router.post("/auth0", async (req, res) => {
         lastName: user.lastName,
         avatarURL: user.avatarURL,
         role: user.role,
+        disabled: user.disabled,
       },
     });
   } catch (error) {
@@ -152,6 +154,7 @@ router.post("/signup", async (req, res) => {
         lastName: user.lastName,
         avatarURL: user.avatarURL,
         role: user.role,
+        disabled: user.disabled,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
@@ -173,6 +176,7 @@ router.post("/signup", async (req, res) => {
         lastName: user.lastName,
         avatarURL: user.avatarURL,
         role: user.role,
+        disabled: user.disabled,
       },
     });
   } catch (error) {
@@ -187,17 +191,16 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      res.status(400).send({ error: "All fields are required" });
-      return;
+      return res.status(400).send({ error: "All fields are required" });
     }
 
     // Find user
     const user = await User.findOne({ where: { email } });
-    user.checkPassword(password);
     if (!user) {
       return res.status(401).send({ error: "Invalid credentials" });
     }
 
+    // Check if user is disabled
     if (user.disabled) {
       return res
         .status(403)
@@ -219,6 +222,7 @@ router.post("/login", async (req, res) => {
         lastName: user.lastName,
         avatarURL: user.avatarURL,
         role: user.role,
+        disabled: user.disabled,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
@@ -241,6 +245,7 @@ router.post("/login", async (req, res) => {
         lastName: user.lastName,
         avatarURL: user.avatarURL,
         role: user.role,
+        disabled: user.disabled,
       },
     });
   } catch (error) {
@@ -278,6 +283,7 @@ router.get("/me", async (req, res) => {
         lastName: user.lastName,
         avatarURL: user.avatarURL,
         role: user.role,
+        disabled: user.disabled,
       });
     });
   } catch (err) {
@@ -309,7 +315,15 @@ router.get("/users", async (req, res) => {
     }
 
     const users = await User.findAll({
-      attributes: ["id", "firstName", "lastName", "email", "avatarURL", "role"],
+      attributes: [
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "avatarURL",
+        "role",
+        "disabled",
+      ],
     });
     res.status(200).send(users);
   } catch (error) {

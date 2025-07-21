@@ -33,7 +33,7 @@ const seed = async () => {
       },
       {
         email: "Michelangelo",
-        passwordHash: User.hashPassword("user222"),
+        passwordHash: User.hashPassword("user333"),
         firstName: "Michelangelo",
         lastName: "Three",
         avatarURL: "https://static.thenounproject.com/png/5100711-200.png",

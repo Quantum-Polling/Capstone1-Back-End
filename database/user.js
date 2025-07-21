@@ -44,9 +44,10 @@ const User = db.define("user", {
     defaultValue: "User",
     allowNull: false,
   },
-  disable: {
+  disabled: {
     type: DataTypes.BOOLEAN,
-    defaultValue: "true",
+    defaultValue: false,
+    allowNull: false,
   },
 });
 
