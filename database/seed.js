@@ -28,7 +28,6 @@ const seed = async () => {
         lastName: "Ortega",
         role: "Admin",
       },
-      {
         email: "Michaelangelo@example.com",
         passwordHash: User.hashPassword("user444"),
         firstName: "Michaelangelo",
