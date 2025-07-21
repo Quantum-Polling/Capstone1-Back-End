@@ -198,6 +198,12 @@ router.post("/login", async (req, res) => {
       return res.status(401).send({ error: "Invalid credentials" });
     }
 
+    if (user.disabled) {
+      return res
+        .status(403)
+        .json({ message: "This account has been disabled." });
+    }
+
     // Check password
     if (!user.checkPassword(password)) {
       return res.status(401).send({ error: "Invalid credentials" });
@@ -309,6 +315,52 @@ router.get("/users", async (req, res) => {
   } catch (error) {
     console.error("Error fetching users:", error);
     res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
+router.patch("/:id/disable", async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (!token) return res.sendStatus(401);
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.role.toLowerCase() !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.disabled = true;
+    await user.save();
+
+    res.status(200).json({ message: "User has been disabled" });
+  } catch (error) {
+    console.error("Disable error:", error);
+    res.status(500).json({ error: "Failed to disable user" });
+  }
+});
+
+router.patch("/:id/enable", async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (!token) return res.sendStatus(401);
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.role.toLowerCase() !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.disabled = false;
+    await user.save();
+
+    res.status(200).json({ message: "User has been enabled" });
+  } catch (error) {
+    console.error("Enable error:", error);
+    res.status(500).json({ error: "Failed to enable user" });
   }
 });
 
