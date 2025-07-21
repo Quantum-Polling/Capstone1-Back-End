@@ -74,13 +74,32 @@ const formattedOptions = (options, pollId) => {
     pollId: pollId
   }));
 }
-
 router.get("/", async (req, res) => {
   try {
-    const result = await Poll.findAll();
-    res.send(result);
+    const result = await Poll.findAll({
+      include: [
+        {
+          model: User,
+          as: "creator",
+          attributes: [
+            ["firstName", "creatorFirstName"],
+            ["lastName", "creatorLastName"],
+          ],
+        },
+        {
+          model: PollOption,
+          as: [Sequelize.fn("COUNT", Sequelize.col("pollId"))],
+        },
+        {
+          model: PollVote,
+          as: [Sequelize.fn("COUNT", Sequelize.col("pollId"))],
+        },
+      ],
+    });
+    res.status(200).send(result);
   } catch (error) {
-    res.status(501).send("Not Implemented");
+    console.log(error);
+    res.status(501).send("Bad", error);
   }
 });
 
