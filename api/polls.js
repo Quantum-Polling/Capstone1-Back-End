@@ -243,4 +243,40 @@ router.patch("/:userId/edit/:id", authenticateJWT, async (req, res) => {
   }
 });
 
+// Get the results of a poll
+router.get("/:id/results", async (req, res) => {
+  const id = req.params.id;
+  try {
+    // Check if the results have already been calculated and stored
+    // If so, return the results from the table
+    // Otherwise run the calculation algorithm
+  
+    // Calculate the results
+    // Get the total number of options
+    // Get all the votes
+    // Convert all votes into an array of ballots
+    // Create arrays for eliminated options and final results
+    // For each round:
+    // - Create a round results array initialized with as many 0s as there are options
+    // - For each ballot:
+    //   - If there is an option in the first slot of the ballot:
+    //     - If the option has been eliminated, shift the array (pops the first 
+    //       element) and check again
+    //     - Otherwise increment the option's total in round results
+    //   - Otherwise skip this ballot
+    // - After all ballots have been counted:
+    //   - If there is an option in round results with more than half the votes, 
+    //     push round results to results and end the calculation
+    //   - Otherwise get all the options with the least amount of votes
+    //   - If the number of options with least votes is the same as the number of
+    //     remaining options, push round result to results and end the calculation
+    //   - Otherwise add the newly eliminated options to the eliminated array
+    //   - Push round results to results
+    // Store the results
+    // Return the results
+  } catch (error) {
+    res.status(500).send({error: `Error getting the results of poll ${id}: ${error}`});
+  }
+});
+
 module.exports = router;
