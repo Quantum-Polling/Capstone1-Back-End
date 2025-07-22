@@ -28,6 +28,7 @@ const seed = async () => {
         lastName: "Ortega",
         role: "Admin",
       },
+      {
         email: "Michaelangelo@example.com",
         passwordHash: User.hashPassword("user444"),
         firstName: "Michaelangelo",
@@ -40,7 +41,7 @@ const seed = async () => {
         firstName: "Test",
         lastName: "Testerson",
         role: "User",
-      }
+      },
     ]);
 
     console.log(`👤 Created ${users.length} users`);
