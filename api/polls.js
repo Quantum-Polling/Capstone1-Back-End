@@ -277,7 +277,30 @@ router.get("/:id/results", async (req, res) => {
     })
     
     // Convert all votes into an array of ballots
+    const ballots = [];
+    const ballot = [];
+    let currentVoterId = votes[0].dataValues.voterId;
+    for (let i = 0; i < votes.length; i++) {
+      const vote = votes[i].dataValues;
+      // Push the current voter's ballot
+      // and move to the next voter
+      console.log(vote);
+      if (vote.voterId !== currentVoterId) {
+        currentVoterId = vote.voterId;
+        ballots.push([...ballot]);
+        ballot.length = 0;
+      }
+
+      // Add the vote to the current voter's ballot
+      ballot.push(vote.optionId);
+    }
+    ballots.push([...ballot]);
+
     // Create arrays for eliminated options and final results
+    const eliminated = [];
+    const finalResults = []
+
+    let finished = false;
     // For each round:
     // - Create a round results array initialized with as many 0s as there are options
     // - For each ballot:
