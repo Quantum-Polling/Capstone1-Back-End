@@ -257,10 +257,15 @@ router.get("/:id/results", async (req, res) => {
     // Otherwise run the calculation algorithm
   
     // Calculate the results
-    // Get the total number of options
-    const numOptions = await PollOption.count({ where: { pollId: id } });
+    // Get all of the options
+    const options = await PollOption.findAll({ where: { pollId: id } });
+    const numOptions = options.length;
     if (numOptions === 0)
       return res.status(404).send({error: `Could not find options for poll with ID ${id}`});
+
+    // Keep track of their indexes for proper result tallying
+    const optionIndexes = {};
+    options.map((option, index) => (optionIndexes[option.id] = index));
 
     // Get all the votes
     const votes = await PollVote.findAll({
@@ -284,7 +289,6 @@ router.get("/:id/results", async (req, res) => {
       const vote = votes[i].dataValues;
       // Push the current voter's ballot
       // and move to the next voter
-      console.log(vote);
       if (vote.voterId !== currentVoterId) {
         currentVoterId = vote.voterId;
         ballots.push([...ballot]);
@@ -296,29 +300,85 @@ router.get("/:id/results", async (req, res) => {
     }
     ballots.push([...ballot]);
 
-    // Create arrays for eliminated options and final results
-    const eliminated = [];
+    // Create containers for eliminated options and final results
+    let eliminated = new Set();
+    //console.log(eliminated);
     const finalResults = []
 
     let finished = false;
     // For each round:
-    // - Create a round results array initialized with as many 0s as there are options
-    // - For each ballot:
-    //   - If there is an option in the first slot of the ballot:
-    //     - If the option has been eliminated, shift the array (pops the first 
-    //       element) and check again
-    //     - Otherwise increment the option's total in round results
-    //   - Otherwise skip this ballot
-    // - After all ballots have been counted:
-    //   - If there is an option in round results with more than half the votes, 
-    //     push round results to results and end the calculation
-    //   - Otherwise get all the options with the least amount of votes
-    //   - If the number of options with least votes is the same as the number of
-    //     remaining options, push round result to results and end the calculation
-    //   - Otherwise add the newly eliminated options to the eliminated array
-    //   - Push round results to results
+    while (!finished) {
+      // Create a round results array initialized with as many 0s as there are options
+      const roundResults = new Array(numOptions).fill(0);
+
+      // For each ballot:
+      for (const ballot of ballots) {
+        // There is no option in the first slot, skip this ballot
+        if (!ballot[0])
+          continue;
+
+        // While there is an option in the first slot of the ballot:
+        while (ballot[0]) {
+          // If the option has been eliminated, shift the array and check again
+          if (eliminated.has(ballot[0])) {
+            ballot.shift();
+            continue;
+          }
+          // Otherwise increment the option's total in round results
+          const index = optionIndexes[ballot[0]];
+          roundResults[index]++;
+          break;
+        }
+      }
+
+      // After all ballots have been counted:
+      // Push round results to results
+      finalResults.push([...roundResults]);
+
+      // If there is an option in round results with more than half the votes, end the calculation
+      for (const total of roundResults) {
+        if (total > ballots.length / 2) {
+          finished = true;
+          continue;
+        }
+      }
+
+      // Otherwise get all the options with the least amount of votes
+      const leastVoted = new Set();
+      let leastVotes = -1;
+      for (let i = 0; i < numOptions; i++) {
+        // Skip already eliminated options
+        if (eliminated.has(options[i].id)) {
+          console.log(`Skipping ${options[i].id}`);
+          continue;
+        }
+
+        const total = roundResults[i];
+        // Tied for least amount of votes
+        if (total === leastVotes)
+          leastVoted.add(options[i].id);
+        // New least amount of votes
+        else if (leastVotes === -1 || total < leastVotes) {
+          leastVotes = total;
+          leastVoted.clear();
+          leastVoted.add(options[i].id);
+        }
+      }
+
+      // If the number of options with least votes is the same as the number of
+      // remaining options, end the calculation
+      if (leastVoted.size === 0 || leastVoted.size === numOptions - eliminated.size) {
+        finished = true;
+        continue;
+      }
+
+      // Otherwise add the newly eliminated options to the eliminated array
+      eliminated = new Set([...eliminated, ...leastVoted]);
+    }
+
     // Store the results
     // Return the results
+    res.status(200).send(finalResults);
   } catch (error) {
     res.status(500).send({error: `Error getting the results of poll ${id}: ${error}`});
   }
