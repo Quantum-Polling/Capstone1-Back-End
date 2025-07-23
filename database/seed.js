@@ -410,7 +410,7 @@ const seed = async () => {
       {
         title: "What to eat",
         description: "Help us decided what to get for dinner!",
-        status: "Open",
+        status: "Closed",
         close_date: null,
         creatorId: 2,
       },
