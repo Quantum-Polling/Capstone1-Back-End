@@ -350,7 +350,7 @@ router.get("/:id/results", async (req, res) => {
     // Format the ballots
     const ballots = [];
     const ballot = [];
-    let currentVoterId = votes[0].dataValues.voterId;
+    let currentVoterId = votes[0]?.dataValues.voterId;
     for (const voteData of votes) {
       const vote = voteData.dataValues;
       if (vote.voterId !== currentVoterId) {
