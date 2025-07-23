@@ -3,6 +3,7 @@ const User = require("./user");
 const Poll = require("./poll");
 const PollOption = require("./poll_option");
 const PollVote = require("./poll_vote");
+const PollResult = require("./poll_result");
 
 // Create one to many relationship between User and Poll
 Poll.belongsTo(User, {
@@ -72,10 +73,31 @@ Poll.hasMany(PollVote, {
   onUpdate: "CASCADE",
 });
 
+// Create a one to many relationship between Poll and PollResult
+PollResult.belongsTo(Poll, {
+  foreignKey: "pollId",
+});
+Poll.hasMany(PollResult, {
+  foreignKey: "pollId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+// Create a one to many relationship between PollOption and PollResult
+PollResult.belongsTo(PollOption, {
+  foreignKey: "optionId",
+});
+PollOption.hasMany(PollResult, {
+  foreignKey: "optionId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
 module.exports = {
   db,
   User,
   Poll,
   PollOption,
   PollVote,
+  PollResult,
 };
