@@ -59,7 +59,7 @@ router.post("/auth0", async (req, res) => {
         username: username || email?.split("@")[0] || `user_${Date.now()}`, // Use email prefix as username if no username provided
         passwordHash: null, // Auth0 users don't have passwords
         firstName: firstName,
-        lastName: lastName
+        lastName: lastName,
       };
       // Ensure username is unique
       let finalUsername = userData.username;
@@ -270,12 +270,11 @@ router.get("/me", async (req, res) => {
       return res.send({});
     }
 
-    console.log("auth me token", token);
     jwt.verify(token, JWT_SECRET, (err, user) => {
       if (err) {
         return res.status(403).send({ error: "Invalid or expired token" });
       }
-      console.log("user", user);
+      // console.log("user", user);
       res.send({
         user: user,
         auth0Id: user.auth0Id,
