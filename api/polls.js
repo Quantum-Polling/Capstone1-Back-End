@@ -118,6 +118,7 @@ const formatResultsForTable = (calculatedResults, options, pollId) => {
   return results;
 }
 
+// Get all polls, including number of options and votes
 router.get("/", async (req, res) => {
   try {
     const result = await Poll.findAll({
@@ -313,13 +314,13 @@ router.get("/:id/results", async (req, res) => {
     if (numOptions === 0)
       return res.status(404).send({error: `Could not find options for poll with ID ${id}`});
     
-    // Check if the results have already been calculated and stored
+    // Verify if the results have already been calculated and stored
     const rawResults = await PollResult.findAll({
       where: { pollId: id },
       order: ['round', 'optionId'],
     });
     
-    // If so, return the results from the table
+    // If so, return the formatted results from the table
     if (rawResults.length !== 0) {
       const results = formatResultsFromTable(rawResults);
       return res.status(200).send({
@@ -328,8 +329,7 @@ router.get("/:id/results", async (req, res) => {
       });
     }
     
-    // Otherwise run the calculation algorithm
-    // Keep track of the option indexes for proper result tallying
+    // Otherwise, run the calculation algorithm
     const optionIndexes = {};
     options.map((option, index) => (optionIndexes[option.id] = index));
     
@@ -347,44 +347,39 @@ router.get("/:id/results", async (req, res) => {
       ]
     })
     
-    // Convert all votes into an array of ballots
+    // Format the ballots
     const ballots = [];
     const ballot = [];
     let currentVoterId = votes[0].dataValues.voterId;
-    for (let i = 0; i < votes.length; i++) {
-      const vote = votes[i].dataValues;
-      // Push the current voter's ballot
-      // and move to the next voter
+    for (const voteData of votes) {
+      const vote = voteData.dataValues;
       if (vote.voterId !== currentVoterId) {
         currentVoterId = vote.voterId;
         ballots.push([...ballot]);
         ballot.length = 0;
       }
       
-      // Add the vote to the current voter's ballot
       ballot.push(vote.optionId);
     }
     ballots.push([...ballot]);
     
-    // Create containers for eliminated options and final results
     let eliminated = new Set();
-    const finalResults = []
+    const finalResults = [];
     
-    // For each round:
+    // Loop through each round's calculation:
     round: while (true) {
-      // Create a round results array initialized with as many 0s as there are options
       const roundResults = new Array(numOptions).fill(0);
       
-      // For each ballot:
       for (const ballot of ballots) {
-        // While there is an option in the first slot of the ballot:
+        // Check the top option of each ballot
         while (ballot[0]) {
-          // If the option has been eliminated, shift the array and check again
+          // Remove elimanted options from top of ballot
           if (eliminated.has(ballot[0])) {
             ballot.shift();
             continue;
           }
-          // Otherwise increment the option's total in round results
+
+          // Add vote for top option
           const index = optionIndexes[ballot[0]];
           roundResults[index]++;
           break;
@@ -392,23 +387,20 @@ router.get("/:id/results", async (req, res) => {
       }
       const activeBallots = ballots.filter((ballot) => (ballot.length > 0));
       
-      // After all ballots have been counted:
-      // Push round results to results
       finalResults.push([...roundResults]);
       
-      // If there is an option in round results with more than half the votes, end the calculation
+      // Check for winner
       for (const total of roundResults)
         if (total > activeBallots.length / 2)
           break round;
         
-      // Otherwise get all the options with the least amount of votes
+      // Check for least voted option(s)
       const leastVoted = new Set();
       let leastVotes = -1;
       for (let i = 0; i < numOptions; i++) {
         // Skip already eliminated options
-        if (eliminated.has(options[i].id)) {
+        if (eliminated.has(options[i].id))
           continue;
-        }
         
         const total = roundResults[i];
         // Tied for least amount of votes
@@ -422,12 +414,10 @@ router.get("/:id/results", async (req, res) => {
         }
       }
       
-      // If the number of options with least votes is the same as the number of
-      // remaining options, end the calculation
-      if (leastVoted.size === 0 || leastVoted.size === numOptions - eliminated.size)
+      // Check for tie among all remaining options
+      if (leastVoted.size === numOptions - eliminated.size)
         break round;
       
-      // Otherwise add the newly eliminated options to the eliminated array
       eliminated = new Set([...eliminated, ...leastVoted]);
     }
     
@@ -435,7 +425,6 @@ router.get("/:id/results", async (req, res) => {
     const pollResults = formatResultsForTable(finalResults, options, id);
     await PollResult.bulkCreate(pollResults);
     
-    // return res.status(200).send(pollResults);
     // Return the results
     res.status(200).send({
       message: `Successfully calculated and stored results`, 
