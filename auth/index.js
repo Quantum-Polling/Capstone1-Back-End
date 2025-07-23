@@ -118,7 +118,7 @@ router.post("/auth0", async (req, res) => {
 // Signup route
 router.post("/signup", async (req, res) => {
   try {
-    const { email, password, firstname, lastname } = req.body;
+    const { email, password, firstname, lastname,avatarurl } = req.body;
 
     if (!email || !password || !firstname || !lastname) {
       return res.status(400).send({ error: "All fields are required" });
@@ -143,7 +143,7 @@ router.post("/signup", async (req, res) => {
       passwordHash,
       firstName: firstname,
       lastName: lastname,
-      avatarURL: "https://static.thenounproject.com/png/5100711-200.png", // Default avatar
+      avatarURL: avatarurl, // Default avatar
       role: "User", // Default role
     });
 
