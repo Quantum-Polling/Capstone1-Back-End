@@ -394,7 +394,7 @@ const seed = async () => {
         passwordHash: User.hashPassword("password60"),
         firstName: "Eli",
         lastName: "Austin"
-      }
+      },
     ]);
 
     console.log(`👤 Created ${users.length} users`);

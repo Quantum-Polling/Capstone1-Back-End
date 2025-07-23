@@ -27,14 +27,6 @@ const authenticateJWT = (req, res, next) => {
 };
 
 // isAdmin MiddleWare
-const isAdmin = (req, res, next) => {
-  console.log("Admins req: ", req.user);
-  if (req.user.role !== "admin") {
-    console.log("Not Admin");
-    return res.status(403).json({ message: "Admins only" });
-  }
-  next();
-};
 
 // Auth0 authentication route
 router.post("/auth0", async (req, res) => {
@@ -67,7 +59,7 @@ router.post("/auth0", async (req, res) => {
         username: username || email?.split("@")[0] || `user_${Date.now()}`, // Use email prefix as username if no username provided
         passwordHash: null, // Auth0 users don't have passwords
         firstName: firstName,
-        lastName: lastName
+        lastName: lastName,
       };
       // Ensure username is unique
       let finalUsername = userData.username;
@@ -91,6 +83,7 @@ router.post("/auth0", async (req, res) => {
         lastName: user.lastName,
         avatarURL: user.avatarURL,
         role: user.role,
+        disabled: user.disabled,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
@@ -113,6 +106,7 @@ router.post("/auth0", async (req, res) => {
         lastName: user.lastName,
         avatarURL: user.avatarURL,
         role: user.role,
+        disabled: user.disabled,
       },
     });
   } catch (error) {
@@ -124,7 +118,7 @@ router.post("/auth0", async (req, res) => {
 // Signup route
 router.post("/signup", async (req, res) => {
   try {
-    const { email, password, firstname, lastname } = req.body;
+    const { email, password, firstname, lastname,avatarurl } = req.body;
 
     if (!email || !password || !firstname || !lastname) {
       return res.status(400).send({ error: "All fields are required" });
@@ -149,7 +143,7 @@ router.post("/signup", async (req, res) => {
       passwordHash,
       firstName: firstname,
       lastName: lastname,
-      avatarURL: "https://static.thenounproject.com/png/5100711-200.png", // Default avatar
+      avatarURL: avatarurl, // Default avatar
       role: "User", // Default role
     });
 
@@ -161,6 +155,7 @@ router.post("/signup", async (req, res) => {
         lastName: user.lastName,
         avatarURL: user.avatarURL,
         role: user.role,
+        disabled: user.disabled,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
@@ -182,6 +177,7 @@ router.post("/signup", async (req, res) => {
         lastName: user.lastName,
         avatarURL: user.avatarURL,
         role: user.role,
+        disabled: user.disabled,
       },
     });
   } catch (error) {
@@ -196,15 +192,20 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      res.status(400).send({ error: "All fields are required" });
-      return;
+      return res.status(400).send({ error: "All fields are required" });
     }
 
     // Find user
     const user = await User.findOne({ where: { email } });
-    user.checkPassword(password);
     if (!user) {
       return res.status(401).send({ error: "Invalid credentials" });
+    }
+
+    // Check if user is disabled
+    if (user.disabled) {
+      return res
+        .status(403)
+        .json({ message: "This account has been disabled." });
     }
 
     // Check password
@@ -222,6 +223,7 @@ router.post("/login", async (req, res) => {
         lastName: user.lastName,
         avatarURL: user.avatarURL,
         role: user.role,
+        disabled: user.disabled,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
@@ -244,6 +246,7 @@ router.post("/login", async (req, res) => {
         lastName: user.lastName,
         avatarURL: user.avatarURL,
         role: user.role,
+        disabled: user.disabled,
       },
     });
   } catch (error) {
@@ -267,12 +270,11 @@ router.get("/me", async (req, res) => {
       return res.send({});
     }
 
-    console.log("auth me token", token);
     jwt.verify(token, JWT_SECRET, (err, user) => {
       if (err) {
         return res.status(403).send({ error: "Invalid or expired token" });
       }
-      console.log("user", user);
+      // console.log("user", user);
       res.send({
         user: user,
         auth0Id: user.auth0Id,
@@ -281,6 +283,7 @@ router.get("/me", async (req, res) => {
         lastName: user.lastName,
         avatarURL: user.avatarURL,
         role: user.role,
+        disabled: user.disabled,
       });
     });
   } catch (err) {
@@ -312,7 +315,15 @@ router.get("/users", async (req, res) => {
     }
 
     const users = await User.findAll({
-      attributes: ["id", "firstName", "lastName", "email", "avatarURL", "role"],
+      attributes: [
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "avatarURL",
+        "role",
+        "disabled",
+      ],
     });
     res.status(200).send(users);
   } catch (error) {
@@ -320,5 +331,53 @@ router.get("/users", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch users" });
   }
 });
+
+router.patch("/:id/disable", async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (!token) return res.sendStatus(401);
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.role.toLowerCase() !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.disabled = true;
+    await user.save();
+
+    res.status(200).json({ message: "User has been disabled" });
+  } catch (error) {
+    console.error("Disable error:", error);
+    res.status(500).json({ error: "Failed to disable user" });
+  }
+});
+
+router.patch("/:id/enable", async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (!token) return res.sendStatus(401);
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.role.toLowerCase() !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.disabled = false;
+    await user.save();
+
+    res.status(200).json({ message: "User has been enabled" });
+  } catch (error) {
+    console.error("Enable error:", error);
+    res.status(500).json({ error: "Failed to enable user" });
+  }
+});
+
+//Disable user
 
 module.exports = { router, authenticateJWT };

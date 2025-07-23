@@ -17,6 +17,7 @@ User.hasMany(Poll, {
   foreignKey: "creatorId",
   onDelete: "CASCADE",
   onUpdate: "CASCADE",
+  as: "polls",
 });
 
 // Create one to many relationship between Poll and PollOption
