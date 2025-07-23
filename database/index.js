@@ -98,4 +98,5 @@ module.exports = {
   Poll,
   PollOption,
   PollVote,
+  PollResult,
 };
