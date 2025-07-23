@@ -41,7 +41,7 @@ const seed = async () => {
         firstName: "Test",
         lastName: "Testerson",
         role: "User",
-      }
+      },
     ]);
 
     console.log(`👤 Created ${users.length} users`);
