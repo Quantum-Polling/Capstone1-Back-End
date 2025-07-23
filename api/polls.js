@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { Poll, PollOption, PollVote } = require("../database");
+const { User, Poll, PollOption, PollVote, PollResult } = require("../database");
 const { Sequelize } = require("sequelize");
 const { authenticateJWT } = require("../auth");
 
@@ -74,6 +74,50 @@ const formattedOptions = (options, pollId) => {
     pollId: pollId
   }));
 }
+
+// Formats data retrieved from the PollResults table into a 2D array
+// of results per round. Returns the formatted 2D array
+const formatResultsFromTable = (rawResults) => {
+  const finalResults = [];
+  const roundResults = [];
+
+  let currentRound = 1;
+  for (const result of rawResults) {
+    if (result.round !== currentRound) {
+      currentRound = result.round;
+      finalResults.push([...roundResults]);
+      roundResults.length = 0;
+    }
+    roundResults.push(result.totalVotes);
+  }
+  finalResults.push(roundResults);
+
+  return finalResults;
+}
+
+// Formats calculated result data for insertion into the PollResults table
+// Returns an array of formatted result objects
+const formatResultsForTable = (calculatedResults, options, pollId) => {
+  const results = [];
+
+  for (let i = 0; i < calculatedResults.length; i++) {
+    const round = i + 1;
+    for (let j = 0; j < calculatedResults[i].length; j++) {
+      const optionId = options[j].id;
+      const totalVotes = calculatedResults[i][j];
+      const result = {
+        pollId: pollId,
+        round: round,
+        optionId: optionId,
+        totalVotes: totalVotes,
+      }
+      results.push(result);
+    }
+  }
+
+  return results;
+}
+
 router.get("/", async (req, res) => {
   try {
     const result = await Poll.findAll({
@@ -245,28 +289,50 @@ router.patch("/:userId/edit/:id", authenticateJWT, async (req, res) => {
 
 // Get the results of a poll
 router.get("/:id/results", async (req, res) => {
-  const id = req.params.id;
+  const id = Number(req.params.id);
   try {
     // Verify that the poll exists
-    const poll = await Poll.findByPk(id);
+    const poll = await Poll.findByPk(id, {
+      include: {
+        model: PollOption,
+        where: {
+          pollId: id,
+        }
+      }
+    });
     if (!poll)
       return res.status(404).send({error: `Could not find poll with ID ${id}`});
-
-    // Check if the results have already been calculated and stored
-    // If so, return the results from the table
-    // Otherwise run the calculation algorithm
-  
-    // Calculate the results
-    // Get all of the options
-    const options = await PollOption.findAll({ where: { pollId: id } });
+    
+    // Verify that the poll is in the closed state
+    if (poll.status !== "Closed")
+      return res.status(403).send({error: `Poll with ID ${id} has not closed yet!`});
+    
+    // Extract the options
+    const options = poll.poll_options;
     const numOptions = options.length;
     if (numOptions === 0)
       return res.status(404).send({error: `Could not find options for poll with ID ${id}`});
-
-    // Keep track of their indexes for proper result tallying
+    
+    // Check if the results have already been calculated and stored
+    const rawResults = await PollResult.findAll({
+      where: { pollId: id },
+      order: ['round', 'optionId'],
+    });
+    
+    // If so, return the results from the table
+    if (rawResults.length !== 0) {
+      const results = formatResultsFromTable(rawResults);
+      return res.status(200).send({
+        message: `Successfully retrieved results for poll with ID ${id}`,
+        results: results,
+      });
+    }
+    
+    // Otherwise run the calculation algorithm
+    // Keep track of the option indexes for proper result tallying
     const optionIndexes = {};
     options.map((option, index) => (optionIndexes[option.id] = index));
-
+    
     // Get all the votes
     const votes = await PollVote.findAll({
       where: { 
@@ -294,29 +360,23 @@ router.get("/:id/results", async (req, res) => {
         ballots.push([...ballot]);
         ballot.length = 0;
       }
-
+      
       // Add the vote to the current voter's ballot
       ballot.push(vote.optionId);
     }
     ballots.push([...ballot]);
-
+    
     // Create containers for eliminated options and final results
     let eliminated = new Set();
-    //console.log(eliminated);
     const finalResults = []
-
-    let finished = false;
+    
     // For each round:
-    while (!finished) {
+    round: while (true) {
       // Create a round results array initialized with as many 0s as there are options
       const roundResults = new Array(numOptions).fill(0);
-
+      
       // For each ballot:
       for (const ballot of ballots) {
-        // There is no option in the first slot, skip this ballot
-        if (!ballot[0])
-          continue;
-
         // While there is an option in the first slot of the ballot:
         while (ballot[0]) {
           // If the option has been eliminated, shift the array and check again
@@ -330,29 +390,26 @@ router.get("/:id/results", async (req, res) => {
           break;
         }
       }
-
+      const activeBallots = ballots.filter((ballot) => (ballot.length > 0));
+      
       // After all ballots have been counted:
       // Push round results to results
       finalResults.push([...roundResults]);
-
+      
       // If there is an option in round results with more than half the votes, end the calculation
-      for (const total of roundResults) {
-        if (total > ballots.length / 2) {
-          finished = true;
-          continue;
-        }
-      }
-
+      for (const total of roundResults)
+        if (total > activeBallots.length / 2)
+          break round;
+        
       // Otherwise get all the options with the least amount of votes
       const leastVoted = new Set();
       let leastVotes = -1;
       for (let i = 0; i < numOptions; i++) {
         // Skip already eliminated options
         if (eliminated.has(options[i].id)) {
-          console.log(`Skipping ${options[i].id}`);
           continue;
         }
-
+        
         const total = roundResults[i];
         // Tied for least amount of votes
         if (total === leastVotes)
@@ -364,22 +421,28 @@ router.get("/:id/results", async (req, res) => {
           leastVoted.add(options[i].id);
         }
       }
-
+      
       // If the number of options with least votes is the same as the number of
       // remaining options, end the calculation
-      if (leastVoted.size === 0 || leastVoted.size === numOptions - eliminated.size) {
-        finished = true;
-        continue;
-      }
-
+      if (leastVoted.size === 0 || leastVoted.size === numOptions - eliminated.size)
+        break round;
+      
       // Otherwise add the newly eliminated options to the eliminated array
       eliminated = new Set([...eliminated, ...leastVoted]);
     }
-
+    
     // Store the results
+    const pollResults = formatResultsForTable(finalResults, options, id);
+    await PollResult.bulkCreate(pollResults);
+    
+    // return res.status(200).send(pollResults);
     // Return the results
-    res.status(200).send(finalResults);
+    res.status(200).send({
+      message: `Successfully calculated and stored results`, 
+      results: finalResults,
+    });
   } catch (error) {
+    console.error(error);
     res.status(500).send({error: `Error getting the results of poll ${id}: ${error}`});
   }
 });
