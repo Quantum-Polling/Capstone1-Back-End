@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { User, PollVote, Poll, PollOption } = require("../database");
+const { User, Poll, PollOption, PollVote, PollResult } = require("../database");
 const { Sequelize } = require("sequelize");
 const { authenticateJWT } = require("../auth");
 
@@ -21,11 +21,11 @@ const isPublishable = async (poll, creatorId, pollId = -1) => {
     ];
 
   // Verify that there are at least two options
-  if (!poll.options || poll.options.length < 2) d;
-  response.errors = [
-    ...response.errors,
-    "Not enough options to publish this poll",
-  ];
+  if (!poll.options || poll.options.length < 2)
+    response.errors = [
+      ...response.errors,
+      "Not enough options to publish this poll",
+    ];
 
   // Verify that the user doesn't already have a poll with the given title
   const duplicate = await Poll.findOne({
@@ -79,6 +79,69 @@ const formattedOptions = (options, pollId) => {
     pollId: pollId,
   }));
 };
+
+// Formats data retrieved from the PollResults table into a 2D array
+// of results per round. Returns the formatted 2D array
+const formatResultsFromTable = (rawResults) => {
+  const finalResults = [];
+  const roundResults = [];
+
+  let currentRound = 1;
+  for (const result of rawResults) {
+    if (result.round !== currentRound) {
+      currentRound = result.round;
+      finalResults.push([...roundResults]);
+      roundResults.length = 0;
+    }
+    roundResults.push(result.totalVotes);
+  }
+  finalResults.push(roundResults);
+
+  return finalResults;
+};
+
+// Formats calculated result data for insertion into the PollResults table
+// Returns an array of formatted result objects
+const formatResultsForTable = (calculatedResults, options, pollId) => {
+  const results = [];
+
+  for (let i = 0; i < calculatedResults.length; i++) {
+    const round = i + 1;
+    for (let j = 0; j < calculatedResults[i].length; j++) {
+      const optionId = options[j].id;
+      const totalVotes = calculatedResults[i][j];
+      const result = {
+        pollId: pollId,
+        round: round,
+        optionId: optionId,
+        totalVotes: totalVotes,
+      };
+      results.push(result);
+    }
+  }
+
+  return results;
+};
+
+router.get("/mypolls", async (req, res) => {
+  try {
+    const { userId } = req.query;
+    if (!userId) return res.status(400).send("Missing userId");
+
+    const result = await Poll.findAll({
+      where: { creatorId: userId },
+    });
+
+    console.log("CAPCAP");
+    console.log(result);
+
+    res.send(result);
+  } catch (error) {
+    res.status(501).send("Not Implemented");
+  }
+});
+
+// Get all polls, including number of options and votes
 router.get("/", async (req, res) => {
   try {
     const result = await Poll.findAll({
@@ -98,10 +161,12 @@ router.get("/", async (req, res) => {
         {
           model: PollVote,
           where: { rank: 1 },
+          required: false,
           as: [Sequelize.fn("COUNT", Sequelize.col("pollId"))],
         },
       ],
     });
+    console.log("Polls retrieved:", result);
     res.status(200).send(result);
   } catch (error) {
     console.log(error);
@@ -262,5 +327,155 @@ router.patch("/:userId/edit/:id", authenticateJWT, async (req, res) => {
     res.status(500).send({ error: `Error updating poll: ${error}` });
   }
 });
+
+// Get the results of a poll
+router.get("/:id/results", async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    // Verify that the poll exists
+    const poll = await Poll.findByPk(id, {
+      include: {
+        model: PollOption,
+        where: {
+          pollId: id,
+        },
+      },
+    });
+    if (!poll)
+      return res
+        .status(404)
+        .send({ error: `Could not find poll with ID ${id}` });
+
+    // Verify that the poll is in the closed state
+    if (poll.status !== "Closed")
+      return res
+        .status(403)
+        .send({ error: `Poll with ID ${id} has not closed yet!` });
+
+    // Extract the options
+    const options = poll.poll_options;
+    const numOptions = options.length;
+    if (numOptions === 0)
+      return res
+        .status(404)
+        .send({ error: `Could not find options for poll with ID ${id}` });
+
+    // Verify if the results have already been calculated and stored
+    const rawResults = await PollResult.findAll({
+      where: { pollId: id },
+      order: ["round", "optionId"],
+    });
+
+    // If so, return the formatted results from the table
+    if (rawResults.length !== 0) {
+      const results = formatResultsFromTable(rawResults);
+      return res.status(200).send({
+        message: `Successfully retrieved results for poll with ID ${id}`,
+        results: results,
+      });
+    }
+
+    // Otherwise, run the calculation algorithm
+    const optionIndexes = {};
+    options.map((option, index) => (optionIndexes[option.id] = index));
+
+    // Get all the votes
+    const votes = await PollVote.findAll({
+      where: {
+        pollId: id,
+        submitted: true,
+      },
+      order: [["userId"], ["rank"]],
+      attributes: [["userId", "voterId"], "rank", "optionId"],
+    });
+
+    // Format the ballots
+    const ballots = [];
+    const ballot = [];
+    let currentVoterId = votes[0]?.dataValues.voterId;
+    for (const voteData of votes) {
+      const vote = voteData.dataValues;
+      if (vote.voterId !== currentVoterId) {
+        currentVoterId = vote.voterId;
+        ballots.push([...ballot]);
+        ballot.length = 0;
+      }
+
+      ballot.push(vote.optionId);
+    }
+    ballots.push([...ballot]);
+
+    let eliminated = new Set();
+    const finalResults = [];
+
+    // Loop through each round's calculation:
+    round: while (true) {
+      const roundResults = new Array(numOptions).fill(0);
+
+      for (const ballot of ballots) {
+        // Check the top option of each ballot
+        while (ballot[0]) {
+          // Remove elimanted options from top of ballot
+          if (eliminated.has(ballot[0])) {
+            ballot.shift();
+            continue;
+          }
+
+          // Add vote for top option
+          const index = optionIndexes[ballot[0]];
+          roundResults[index]++;
+          break;
+        }
+      }
+      const activeBallots = ballots.filter((ballot) => ballot.length > 0);
+
+      finalResults.push([...roundResults]);
+
+      // Check for winner
+      for (const total of roundResults)
+        if (total > activeBallots.length / 2) break round;
+
+      // Check for least voted option(s)
+      const leastVoted = new Set();
+      let leastVotes = -1;
+      for (let i = 0; i < numOptions; i++) {
+        // Skip already eliminated options
+        if (eliminated.has(options[i].id)) continue;
+
+        const total = roundResults[i];
+        // Tied for least amount of votes
+        if (total === leastVotes) leastVoted.add(options[i].id);
+        // New least amount of votes
+        else if (leastVotes === -1 || total < leastVotes) {
+          leastVotes = total;
+          leastVoted.clear();
+          leastVoted.add(options[i].id);
+        }
+      }
+
+      // Check for tie among all remaining options
+      if (leastVoted.size === numOptions - eliminated.size) break round;
+
+      eliminated = new Set([...eliminated, ...leastVoted]);
+    }
+
+    // Store the results
+    const pollResults = formatResultsForTable(finalResults, options, id);
+    await PollResult.bulkCreate(pollResults);
+
+    // Return the results
+    res.status(200).send({
+      message: `Successfully calculated and stored results`,
+      results: finalResults,
+    });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .send({ error: `Error getting the results of poll ${id}: ${error}` });
+  }
+});
+
+router.post("/:userId/vote/:id", authenticateJWT, async (req, res) => {});
 
 module.exports = router;
