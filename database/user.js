@@ -43,7 +43,17 @@ const User = db.define("user", {
     type: DataTypes.ENUM("User", "Admin"),
     defaultValue: "User",
     allowNull: false,
-  }
+  },
+  disabled: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: false,
+  },
+  username: {
+  type: DataTypes.STRING,
+  allowNull: false,
+  unique: true,
+},
 });
 
 // Instance method to check password

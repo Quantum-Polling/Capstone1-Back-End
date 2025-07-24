@@ -3,43 +3,95 @@ const User = require("./user");
 const Poll = require("./poll");
 const PollOption = require("./poll_option");
 const PollVote = require("./poll_vote");
+const PollResult = require("./poll_result");
 
 // Create one to many relationship between User and Poll
-Poll.belongsTo(User, { foreignKey: {
-  name: "creatorId",
-  allowNull: false,
-}});
+Poll.belongsTo(User, {
+  as: "creator",
+  foreignKey: {
+    name: "creatorId",
+    allowNull: false,
+  },
+});
 User.hasMany(Poll, {
   foreignKey: "creatorId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
   as: "polls",
 });
 
 // Create one to many relationship between Poll and PollOption
-PollOption.belongsTo(Poll, { foreignKey: {
-  name: "pollId",
-  allowNull: false,
-}});
-Poll.hasMany(PollOption);
+PollOption.belongsTo(Poll, {
+  foreignKey: {
+    name: "pollId",
+    allowNull: false,
+  },
+});
+Poll.hasMany(PollOption, {
+  foreignKey: "pollId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
 
 // Create (zero or one) to many relationship between User and PollVote
-PollVote.belongsTo(User, { as: "voter", foreignKey: {
-  name: "userId",
-  allowNull: true,
-}});
-User.hasMany(PollVote);
+PollVote.belongsTo(User, {
+  as: "voter",
+  foreignKey: {
+    name: "userId",
+    allowNull: true,
+  },
+});
+User.hasMany(PollVote, {
+  foreignKey: "userId",
+  onDelete: "SET NULL",
+  onUpdate: "CASCADE",
+});
 
 // Create one to many relationship between PollOption and PollVote
-PollVote.belongsTo(PollOption, { foreignKey: {
-  name: "optionId",
-  allowNull: false,
-}});
-PollOption.hasMany(PollVote);
+PollVote.belongsTo(PollOption, {
+  foreignKey: {
+    name: "optionId",
+    allowNull: false,
+  },
+});
+PollOption.hasMany(PollVote, {
+  foreignKey: "optionId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
 
 // Create a one to many relationship between Poll and PollVote
-PollVote.belongsTo(Poll, { foreignKey: {
-  name: "pollId",
-  allowNull: false,
-}});
+PollVote.belongsTo(Poll, {
+  foreignKey: {
+    name: "pollId",
+    allowNull: false,
+  },
+});
+Poll.hasMany(PollVote, {
+  foreignKey: "pollId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+// Create a one to many relationship between Poll and PollResult
+PollResult.belongsTo(Poll, {
+  foreignKey: "pollId",
+});
+Poll.hasMany(PollResult, {
+  foreignKey: "pollId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
+
+// Create a one to many relationship between PollOption and PollResult
+PollResult.belongsTo(PollOption, {
+  foreignKey: "optionId",
+});
+PollOption.hasMany(PollResult, {
+  foreignKey: "optionId",
+  onDelete: "CASCADE",
+  onUpdate: "CASCADE",
+});
 
 module.exports = {
   db,
@@ -47,4 +99,5 @@ module.exports = {
   Poll,
   PollOption,
   PollVote,
+  PollResult,
 };

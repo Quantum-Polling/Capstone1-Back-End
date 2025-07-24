@@ -11,6 +11,8 @@ const authenticateJWT = (req, res, next) => {
   const token = req.cookies.token;
 
   if (!token) {
+    console.log("We found it");
+    console.log(req.cookies);
     return res.status(401).send({ error: "Access token required" });
   }
 
@@ -19,9 +21,12 @@ const authenticateJWT = (req, res, next) => {
       return res.status(403).send({ error: "Invalid or expired token" });
     }
     req.user = user;
+    console.log(req.user);
     next();
   });
 };
+
+// isAdmin MiddleWare
 
 // Auth0 authentication route
 router.post("/auth0", async (req, res) => {
@@ -55,7 +60,7 @@ router.post("/auth0", async (req, res) => {
         username: username || email?.split("@")[0] || `user_${Date.now()}`, // Use email prefix as username if no username provided
         passwordHash: null, // Auth0 users don't have passwords
         firstName: firstName,
-        lastName: lastName
+        lastName: lastName,
       };
       // Ensure username is unique
       let finalUsername = userData.username;
@@ -78,6 +83,8 @@ router.post("/auth0", async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         avatarURL: user.avatarURL,
+        role: user.role,
+        disabled: user.disabled,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
@@ -99,6 +106,8 @@ router.post("/auth0", async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         avatarURL: user.avatarURL,
+        role: user.role,
+        disabled: user.disabled,
       },
     });
   } catch (error) {
@@ -110,14 +119,16 @@ router.post("/auth0", async (req, res) => {
 // Signup route
 router.post("/signup", async (req, res) => {
   try {
-    const { email, password, firstname, lastname, avatarurl } = req.body;
+    const { email, password, firstname, lastname,avatarurl } = req.body;
 
     if (!email || !password || !firstname || !lastname) {
       return res.status(400).send({ error: "All fields are required" });
     }
 
     if (password.length < 6) {
-      return res.status(400).send({ error: "Password must be at least 6 characters long" });
+      return res
+        .status(400)
+        .send({ error: "Password must be at least 6 characters long" });
     }
 
     // Check if user already exists
@@ -133,7 +144,7 @@ router.post("/signup", async (req, res) => {
       passwordHash,
       firstName: firstname,
       lastName: lastname,
-      avatarURL: avatarurl,
+      avatarURL: avatarurl, // Default avatar
       role: "User", // Default role
     });
 
@@ -144,6 +155,8 @@ router.post("/signup", async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         avatarURL: user.avatarURL,
+        role: user.role,
+        disabled: user.disabled,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
@@ -164,6 +177,8 @@ router.post("/signup", async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         avatarURL: user.avatarURL,
+        role: user.role,
+        disabled: user.disabled,
       },
     });
   } catch (error) {
@@ -172,22 +187,26 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-
 // Login route
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      res.status(400).send({ error: "All fields are required" });
-      return;
+      return res.status(400).send({ error: "All fields are required" });
     }
 
     // Find user
     const user = await User.findOne({ where: { email } });
-    user.checkPassword(password);
     if (!user) {
       return res.status(401).send({ error: "Invalid credentials" });
+    }
+
+    // Check if user is disabled
+    if (user.disabled) {
+      return res
+        .status(403)
+        .json({ message: "This account has been disabled." });
     }
 
     // Check password
@@ -204,6 +223,8 @@ router.post("/login", async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         avatarURL: user.avatarURL,
+        role: user.role,
+        disabled: user.disabled,
       },
       JWT_SECRET,
       { expiresIn: "24h" }
@@ -225,6 +246,8 @@ router.post("/login", async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         avatarURL: user.avatarURL,
+        role: user.role,
+        disabled: user.disabled,
       },
     });
   } catch (error) {
@@ -240,26 +263,122 @@ router.post("/logout", (req, res) => {
 });
 
 // Get current user route (protected)
-router.get("/me", (req, res) => {
-  const token = req.cookies.token;
+router.get("/me", async (req, res) => {
+  try {
+    const token = req.cookies.token;
 
-  if (!token) {
-    return res.send({});
-  }
-
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).send({ error: "Invalid or expired token" });
+    if (!token) {
+      return res.send({});
     }
-    res.send({
-      user: user,
-      auth0Id: user.auth0Id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      avatarURL: user.avatarURL,
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+      if (err) {
+        return res.status(403).send({ error: "Invalid or expired token" });
+      }
+      // console.log("user", user);
+      res.send({
+        user: user,
+        auth0Id: user.auth0Id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarURL: user.avatarURL,
+        role: user.role,
+        disabled: user.disabled,
+      });
     });
-  });
+  } catch (err) {
+    console.error(err);
+    res.sendStatus(500);
+  }
 });
+
+// Get all users if user isAdmin
+router.get("/users", async (req, res) => {
+  try {
+    const token = req.cookies.token;
+
+    if (!token) {
+      return res.sendStatus(401);
+    }
+
+    // check token
+    let user;
+    try {
+      user = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(403).json({ error: "Invalid or expired token" });
+    }
+
+    // check if user isadmin
+    if (user.role.toLowerCase() !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    const users = await User.findAll({
+      attributes: [
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "avatarURL",
+        "role",
+        "disabled",
+      ],
+    });
+    res.status(200).send(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+});
+
+router.patch("/:id/disable", async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (!token) return res.sendStatus(401);
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.role.toLowerCase() !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.disabled = true;
+    await user.save();
+
+    res.status(200).json({ message: "User has been disabled" });
+  } catch (error) {
+    console.error("Disable error:", error);
+    res.status(500).json({ error: "Failed to disable user" });
+  }
+});
+
+router.patch("/:id/enable", async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (!token) return res.sendStatus(401);
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.role.toLowerCase() !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    const user = await User.findByPk(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.disabled = false;
+    await user.save();
+
+    res.status(200).json({ message: "User has been enabled" });
+  } catch (error) {
+    console.error("Enable error:", error);
+    res.status(500).json({ error: "Failed to enable user" });
+  }
+});
+
+//Disable user
 
 module.exports = { router, authenticateJWT };
