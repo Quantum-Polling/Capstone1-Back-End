@@ -166,7 +166,6 @@ router.get("/", async (req, res) => {
         },
       ],
     });
-    console.log("Polls retrieved:", result);
     res.status(200).send(result);
   } catch (error) {
     console.log(error);
@@ -179,10 +178,29 @@ router.get("/:id", async (req, res) => {
   const pollId = Number(req.params.id);
   try {
     const rawPoll = await Poll.findByPk(pollId, {
-      include: {
-        model: PollOption,
-        attributes: ["text"],
+      attributes: {
+        include: [
+          [
+            Sequelize.fn("concat", 
+              Sequelize.col("creator.firstName"),
+              " ",
+              Sequelize.col("creator.lastName"),
+            ), 
+            "creatorName"
+          ],
+        ]
       },
+      include: [
+        {
+          model: User,
+          as: "creator",
+          attributes: [],
+        },
+        {
+          model: PollOption,
+          attributes: ["text"],
+        },
+      ],
       order: [[{ model: PollOption }, Sequelize.col("id")]],
     });
 
@@ -197,6 +215,7 @@ router.get("/:id", async (req, res) => {
       .status(200)
       .send({ message: `Successfully retrieved poll`, poll: poll });
   } catch (error) {
+    console.error(error);
     res
       .status(500)
       .send({ error: `Error getting poll with ID ${pollId}: ${error}` });
