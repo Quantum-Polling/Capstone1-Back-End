@@ -611,6 +611,52 @@ router.patch("/:id/enable", async (req, res) => {
   }
 });
 
-router.post("/:userId/vote/:id", authenticateJWT, async (req, res) => {});
+router.post("/:userId/vote/:id", authenticateJWT, async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    const pollId = Number(req.params.id);
+    const { rankings } = req.body;
+
+    // Check if user already voted
+    const existingVotes = await PollVote.findOne({
+      where: { pollId, userId, submitted: true },
+    });
+    if (existingVotes) {
+      return res.status(400).json({ message: "You have already voted." });
+    }
+
+    // Store each ranked vote
+    for (let i = 0; i < rankings.length; i++) {
+      const optionText = rankings[i].option;
+      const rank = rankings[i].rank;
+
+      // Find option ID from text
+      const option = await PollOption.findOne({
+        where: { pollId, text: optionText },
+      });
+
+      if (!option) {
+        return res
+          .status(400)
+          .json({ message: `Invalid option: ${optionText}` });
+      }
+
+      await PollVote.create({
+        pollId,
+        userId,
+        optionId: option.id,
+        rank,
+        submitted: true,
+      });
+    }
+
+    res.status(201).json({ message: "Vote recorded successfully" });
+  } catch (error) {
+    console.error("Error submitting vote:", error);
+    res.status(500).json({ message: "Error submitting vote" });
+    console.log("Received vote for poll", pollId, "from user", userId);
+    console.log("Rankings:", rankings);
+  }
+});
 
 module.exports = router;
