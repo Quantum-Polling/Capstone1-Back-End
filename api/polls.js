@@ -344,6 +344,39 @@ router.patch("/:userId/edit/:id", authenticateJWT, async (req, res) => {
   }
 });
 
+// Close a poll
+router.patch("/:userId/close/:id", async (req, res) => {
+  const userId = Number(req.params.userId);
+  const pollId = Number(req.params.id);
+
+  try {
+    const rawPoll = await Poll.findByPk(pollId);
+    if (!rawPoll)
+      return res.status(404).send({ 
+        error: `Error closing poll: Poll with ID ${pollId} not found`
+      });
+    
+    const poll = rawPoll.toJSON();
+    if (poll.creatorId !== userId)
+      return res.status(403).send({ 
+        error: `Error closing poll: You are not the owner of the poll with ID ${pollId}`
+      });
+    
+    if (poll.status !== "Open")
+      return res.status(403).send({ 
+        error: `Error closing poll: Cannot close poll with ID ${pollId} because it is not open`
+      });
+
+    await rawPoll.update({
+      status: "Closed",
+    });
+    res.status(200).send({ message: `Successfully closed poll with ID ${pollId}` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ error: `Error closing poll with ID ${pollId}: ${error}` });
+  }
+});
+
 // Delete a draft poll
 router.delete("/:userId/delete/:id", async (req, res) => {
   try {
