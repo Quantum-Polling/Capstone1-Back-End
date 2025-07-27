@@ -118,7 +118,7 @@ router.post("/auth0", async (req, res) => {
 // Signup route
 router.post("/signup", async (req, res) => {
   try {
-    const { email, password, firstname, lastname,avatarurl } = req.body;
+    const { email, password, firstname, lastname, avatarurl } = req.body;
 
     if (!email || !password || !firstname || !lastname) {
       return res.status(400).send({ error: "All fields are required" });
@@ -231,8 +231,8 @@ router.post("/login", async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none",
+      secure: false,
+      sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     });
 

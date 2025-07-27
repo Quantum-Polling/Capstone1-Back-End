@@ -196,7 +196,7 @@ router.get("/:id", async (req, res) => {
         },
         {
           model: PollOption,
-          attributes: ["text"],
+          attributes: ["id", "text"],
         },
       ],
       order: [[{ model: PollOption }, Sequelize.col("id")]],
@@ -538,6 +538,7 @@ router.get("/:id/results", async (req, res) => {
           leastVoted.clear();
           leastVoted.add(options[i].id);
         }
+        router.post;
       }
 
       // Check for tie among all remaining options
@@ -613,49 +614,54 @@ router.patch("/:id/enable", async (req, res) => {
 
 router.post("/:userId/vote/:id", authenticateJWT, async (req, res) => {
   try {
-    const userId = Number(req.params.userId);
+    const authenticatedUserId = req.user.id; // from JWT middleware
+    const requestedUserId = Number(req.params.userId);
     const pollId = Number(req.params.id);
     const { rankings } = req.body;
 
+    if (authenticatedUserId !== requestedUserId) {
+      return res.status(403).json({ message: "Forbidden: User mismatch" });
+    }
+
     // Check if user already voted
     const existingVotes = await PollVote.findOne({
-      where: { pollId, userId, submitted: true },
+      where: { pollId, userId: requestedUserId, submitted: true },
     });
     if (existingVotes) {
       return res.status(400).json({ message: "You have already voted." });
     }
 
-    // Store each ranked vote
+    // Validate and create votes
     for (let i = 0; i < rankings.length; i++) {
-      const optionText = rankings[i].option;
+      const optionId = rankings[i].optionId;
       const rank = rankings[i].rank;
 
-      // Find option ID from text
       const option = await PollOption.findOne({
-        where: { pollId, text: optionText },
+        where: { id: optionId, pollId },
       });
 
       if (!option) {
-        return res
-          .status(400)
-          .json({ message: `Invalid option: ${optionText}` });
+        console.error(
+          `❌ Option ${optionId} does not belong to poll ${pollId}`
+        );
+        return res.status(400).json({
+          message: `Option ID ${optionId} does not belong to poll ${pollId}`,
+        });
       }
 
       await PollVote.create({
         pollId,
-        userId,
-        optionId: option.id,
+        userId: requestedUserId,
+        optionId,
         rank,
         submitted: true,
       });
     }
 
-    res.status(201).json({ message: "Vote recorded successfully" });
+    res.status(201).json({ message: "✅ Vote recorded successfully" });
   } catch (error) {
-    console.error("Error submitting vote:", error);
+    console.error("❌ Error submitting vote:", error);
     res.status(500).json({ message: "Error submitting vote" });
-    console.log("Received vote for poll", pollId, "from user", userId);
-    console.log("Rankings:", rankings);
   }
 });
 

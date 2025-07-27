@@ -31,7 +31,7 @@ const Poll = db.define("poll", {
   },
   disabled: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true,
+    defaultValue: false,
     allowNull: false,
   },
 });
