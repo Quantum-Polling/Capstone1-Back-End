@@ -29,8 +29,8 @@ const seed = async () => {
         role: "Admin",
       },
       {
-        email: "Michaelangelo@example.com",
-        passwordHash: User.hashPassword("user444"),
+        email: "Michelangelo@example.com",
+        passwordHash: User.hashPassword("1234567890"),
         firstName: "Michaelangelo",
         lastName: "Javier",
         role: "Admin",
@@ -39,361 +39,361 @@ const seed = async () => {
         email: "user01@example.com",
         passwordHash: User.hashPassword("password01"),
         firstName: "Olivia",
-        lastName: "Bennett"
+        lastName: "Bennett",
       },
       {
         email: "user02@example.com",
         passwordHash: User.hashPassword("password02"),
         firstName: "Liam",
-        lastName: "Ramirez"
+        lastName: "Ramirez",
       },
       {
         email: "user03@example.com",
         passwordHash: User.hashPassword("password03"),
         firstName: "Emma",
-        lastName: "Wong"
+        lastName: "Wong",
       },
       {
         email: "user04@example.com",
         passwordHash: User.hashPassword("password04"),
         firstName: "Noah",
-        lastName: "Khan"
+        lastName: "Khan",
       },
       {
         email: "user05@example.com",
         passwordHash: User.hashPassword("password05"),
         firstName: "Ava",
-        lastName: "Smith"
+        lastName: "Smith",
       },
       {
         email: "user06@example.com",
         passwordHash: User.hashPassword("password06"),
         firstName: "Elijah",
-        lastName: "Nguyen"
+        lastName: "Nguyen",
       },
       {
         email: "user07@example.com",
         passwordHash: User.hashPassword("password07"),
         firstName: "Isabella",
-        lastName: "Martinez"
+        lastName: "Martinez",
       },
       {
         email: "user08@example.com",
         passwordHash: User.hashPassword("password08"),
         firstName: "James",
-        lastName: "Walker"
+        lastName: "Walker",
       },
       {
         email: "user09@example.com",
         passwordHash: User.hashPassword("password09"),
         firstName: "Sophia",
-        lastName: "Patel"
+        lastName: "Patel",
       },
       {
         email: "user10@example.com",
         passwordHash: User.hashPassword("password10"),
         firstName: "Benjamin",
-        lastName: "Kim"
+        lastName: "Kim",
       },
       {
         email: "user11@example.com",
         passwordHash: User.hashPassword("password11"),
         firstName: "Mia",
-        lastName: "Clark"
+        lastName: "Clark",
       },
       {
         email: "user12@example.com",
         passwordHash: User.hashPassword("password12"),
         firstName: "Lucas",
-        lastName: "Lewis"
+        lastName: "Lewis",
       },
       {
         email: "user13@example.com",
         passwordHash: User.hashPassword("password13"),
         firstName: "Charlotte",
-        lastName: "Robinson"
+        lastName: "Robinson",
       },
       {
         email: "user14@example.com",
         passwordHash: User.hashPassword("password14"),
         firstName: "Henry",
-        lastName: "Adams"
+        lastName: "Adams",
       },
       {
         email: "user15@example.com",
         passwordHash: User.hashPassword("password15"),
         firstName: "Amelia",
-        lastName: "Turner"
+        lastName: "Turner",
       },
       {
         email: "user16@example.com",
         passwordHash: User.hashPassword("password16"),
         firstName: "Alexander",
-        lastName: "Torres"
+        lastName: "Torres",
       },
       {
         email: "user17@example.com",
         passwordHash: User.hashPassword("password17"),
         firstName: "Harper",
-        lastName: "Hernandez"
+        lastName: "Hernandez",
       },
       {
         email: "user18@example.com",
         passwordHash: User.hashPassword("password18"),
         firstName: "Sebastian",
-        lastName: "Lopez"
+        lastName: "Lopez",
       },
       {
         email: "user19@example.com",
         passwordHash: User.hashPassword("password19"),
         firstName: "Evelyn",
-        lastName: "Hill"
+        lastName: "Hill",
       },
       {
         email: "user20@example.com",
         passwordHash: User.hashPassword("password20"),
         firstName: "Jackson",
-        lastName: "Scott"
+        lastName: "Scott",
       },
       {
         email: "user21@example.com",
         passwordHash: User.hashPassword("password21"),
         firstName: "Abigail",
-        lastName: "Green"
+        lastName: "Green",
       },
       {
         email: "user22@example.com",
         passwordHash: User.hashPassword("password22"),
         firstName: "Daniel",
-        lastName: "Evans"
+        lastName: "Evans",
       },
       {
         email: "user23@example.com",
         passwordHash: User.hashPassword("password23"),
         firstName: "Ella",
-        lastName: "Baker"
+        lastName: "Baker",
       },
       {
         email: "user24@example.com",
         passwordHash: User.hashPassword("password24"),
         firstName: "Matthew",
-        lastName: "Mitchell"
+        lastName: "Mitchell",
       },
       {
         email: "user25@example.com",
         passwordHash: User.hashPassword("password25"),
         firstName: "Scarlett",
-        lastName: "Perez"
+        lastName: "Perez",
       },
       {
         email: "user26@example.com",
         passwordHash: User.hashPassword("password26"),
         firstName: "David",
-        lastName: "Carter"
+        lastName: "Carter",
       },
       {
         email: "user27@example.com",
         passwordHash: User.hashPassword("password27"),
         firstName: "Victoria",
-        lastName: "Phillips"
+        lastName: "Phillips",
       },
       {
         email: "user28@example.com",
         passwordHash: User.hashPassword("password28"),
         firstName: "Joseph",
-        lastName: "Price"
+        lastName: "Price",
       },
       {
         email: "user29@example.com",
         passwordHash: User.hashPassword("password29"),
         firstName: "Grace",
-        lastName: "Reed"
+        lastName: "Reed",
       },
       {
         email: "user30@example.com",
         passwordHash: User.hashPassword("password30"),
         firstName: "Samuel",
-        lastName: "Morgan"
+        lastName: "Morgan",
       },
       {
         email: "user31@example.com",
         passwordHash: User.hashPassword("password31"),
         firstName: "Nora",
-        lastName: "Sullivan"
+        lastName: "Sullivan",
       },
       {
         email: "user32@example.com",
         passwordHash: User.hashPassword("password32"),
         firstName: "Logan",
-        lastName: "Foster"
+        lastName: "Foster",
       },
       {
         email: "user33@example.com",
         passwordHash: User.hashPassword("password33"),
         firstName: "Chloe",
-        lastName: "Barnes"
+        lastName: "Barnes",
       },
       {
         email: "user34@example.com",
         passwordHash: User.hashPassword("password34"),
         firstName: "Wyatt",
-        lastName: "Wells"
+        lastName: "Wells",
       },
       {
         email: "user35@example.com",
         passwordHash: User.hashPassword("password35"),
         firstName: "Zoe",
-        lastName: "Fisher"
+        lastName: "Fisher",
       },
       {
         email: "user36@example.com",
         passwordHash: User.hashPassword("password36"),
         firstName: "Levi",
-        lastName: "Griffin"
+        lastName: "Griffin",
       },
       {
         email: "user37@example.com",
         passwordHash: User.hashPassword("password37"),
         firstName: "Hazel",
-        lastName: "Henderson"
+        lastName: "Henderson",
       },
       {
         email: "user38@example.com",
         passwordHash: User.hashPassword("password38"),
         firstName: "Isaac",
-        lastName: "Graham"
+        lastName: "Graham",
       },
       {
         email: "user39@example.com",
         passwordHash: User.hashPassword("password39"),
         firstName: "Lily",
-        lastName: "Wallace"
+        lastName: "Wallace",
       },
       {
         email: "user40@example.com",
         passwordHash: User.hashPassword("password40"),
         firstName: "Owen",
-        lastName: "Warren"
+        lastName: "Warren",
       },
       {
         email: "user41@example.com",
         passwordHash: User.hashPassword("password41"),
         firstName: "Ellie",
-        lastName: "Hunter"
+        lastName: "Hunter",
       },
       {
         email: "user42@example.com",
         passwordHash: User.hashPassword("password42"),
         firstName: "Gabriel",
-        lastName: "Ford"
+        lastName: "Ford",
       },
       {
         email: "user43@example.com",
         passwordHash: User.hashPassword("password43"),
         firstName: "Aria",
-        lastName: "Wagner"
+        lastName: "Wagner",
       },
       {
         email: "user44@example.com",
         passwordHash: User.hashPassword("password44"),
         firstName: "Carter",
-        lastName: "Stevens"
+        lastName: "Stevens",
       },
       {
         email: "user45@example.com",
         passwordHash: User.hashPassword("password45"),
         firstName: "Lillian",
-        lastName: "Payne"
+        lastName: "Payne",
       },
       {
         email: "user46@example.com",
         passwordHash: User.hashPassword("password46"),
         firstName: "Julian",
-        lastName: "Pierce"
+        lastName: "Pierce",
       },
       {
         email: "user47@example.com",
         passwordHash: User.hashPassword("password47"),
         firstName: "Natalie",
-        lastName: "Woods"
+        lastName: "Woods",
       },
       {
         email: "user48@example.com",
         passwordHash: User.hashPassword("password48"),
         firstName: "Grayson",
-        lastName: "Black"
+        lastName: "Black",
       },
       {
         email: "user49@example.com",
         passwordHash: User.hashPassword("password49"),
         firstName: "Addison",
-        lastName: "Cole"
+        lastName: "Cole",
       },
       {
         email: "user50@example.com",
         passwordHash: User.hashPassword("password50"),
         firstName: "Maverick",
-        lastName: "Reynolds"
+        lastName: "Reynolds",
       },
       {
         email: "user51@example.com",
         passwordHash: User.hashPassword("password51"),
         firstName: "Audrey",
-        lastName: "Hanson"
+        lastName: "Hanson",
       },
       {
         email: "user52@example.com",
         passwordHash: User.hashPassword("password52"),
         firstName: "Lincoln",
-        lastName: "Ellis"
+        lastName: "Ellis",
       },
       {
         email: "user53@example.com",
         passwordHash: User.hashPassword("password53"),
         firstName: "Brooklyn",
-        lastName: "Fox"
+        lastName: "Fox",
       },
       {
         email: "user54@example.com",
         passwordHash: User.hashPassword("password54"),
         firstName: "Jaxon",
-        lastName: "Dean"
+        lastName: "Dean",
       },
       {
         email: "user55@example.com",
         passwordHash: User.hashPassword("password55"),
         firstName: "Claire",
-        lastName: "Gibson"
+        lastName: "Gibson",
       },
       {
         email: "user56@example.com",
         passwordHash: User.hashPassword("password56"),
         firstName: "Nathan",
-        lastName: "Lane"
+        lastName: "Lane",
       },
       {
         email: "user57@example.com",
         passwordHash: User.hashPassword("password57"),
         firstName: "Savannah",
-        lastName: "Harper"
+        lastName: "Harper",
       },
       {
         email: "user58@example.com",
         passwordHash: User.hashPassword("password58"),
         firstName: "Aaron",
-        lastName: "Peters"
+        lastName: "Peters",
       },
       {
         email: "user59@example.com",
         passwordHash: User.hashPassword("password59"),
         firstName: "Stella",
-        lastName: "Knight"
+        lastName: "Knight",
       },
       {
         email: "user60@example.com",
         passwordHash: User.hashPassword("password60"),
         firstName: "Eli",
-        lastName: "Austin"
+        lastName: "Austin",
       },
     ]);
 
@@ -482,7 +482,7 @@ const seed = async () => {
       { userId: 2, pollId: 2, optionId: 14, rank: 1, submitted: true },
       { userId: 2, pollId: 2, optionId: 10, rank: 2, submitted: true },
       { userId: 2, pollId: 2, optionId: 12, rank: 3, submitted: true },
-      
+
       { userId: 3, pollId: 2, optionId: 10, rank: 1, submitted: true },
       { userId: 3, pollId: 2, optionId: 14, rank: 2, submitted: true },
       { userId: 3, pollId: 2, optionId: 12, rank: 3, submitted: true },
@@ -731,7 +731,7 @@ const seed = async () => {
       { userId: 63, pollId: 2, optionId: 8, rank: 2, submitted: true },
 
       { userId: 64, pollId: 2, optionId: 9, rank: 1, submitted: true },
-      { userId: 64, pollId: 2, optionId: 14, rank: 2, submitted: true }
+      { userId: 64, pollId: 2, optionId: 14, rank: 2, submitted: true },
     ]);
 
     console.log(`🗳 Created ${votes.length} poll votes`);

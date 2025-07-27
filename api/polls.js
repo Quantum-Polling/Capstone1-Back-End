@@ -181,14 +181,15 @@ router.get("/:id", async (req, res) => {
       attributes: {
         include: [
           [
-            Sequelize.fn("concat", 
+            Sequelize.fn(
+              "concat",
               Sequelize.col("creator.firstName"),
               " ",
-              Sequelize.col("creator.lastName"),
-            ), 
-            "creatorName"
+              Sequelize.col("creator.lastName")
+            ),
+            "creatorName",
           ],
-        ]
+        ],
       },
       include: [
         {
@@ -492,6 +493,54 @@ router.get("/:id/results", async (req, res) => {
     res
       .status(500)
       .send({ error: `Error getting the results of poll ${id}: ${error}` });
+  }
+});
+
+// Disable a poll (admin only)
+router.patch("/:id/disable", async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (!token) return res.sendStatus(401);
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (!decoded.role || decoded.role.toLowerCase() !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    const poll = await Poll.findByPk(req.params.id);
+    if (!poll) return res.status(404).json({ message: "Poll not found" });
+
+    poll.disabled = true;
+    await poll.save();
+
+    res.status(200).json({ message: "Poll has been disabled" });
+  } catch (error) {
+    console.error("Disable poll error:", error);
+    res.status(500).json({ error: "Failed to disable poll" });
+  }
+});
+
+// Enable a poll (admin only)
+router.patch("/:id/enable", async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (!token) return res.sendStatus(401);
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (!decoded.role || decoded.role.toLowerCase() !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    const poll = await Poll.findByPk(req.params.id);
+    if (!poll) return res.status(404).json({ message: "Poll not found" });
+
+    poll.disabled = false;
+    await poll.save();
+
+    res.status(200).json({ message: "Poll has been enabled" });
+  } catch (error) {
+    console.error("Enable poll error:", error);
+    res.status(500).json({ error: "Failed to enable poll" });
   }
 });
 
