@@ -132,9 +132,6 @@ router.get("/mypolls", async (req, res) => {
       where: { creatorId: userId },
     });
 
-    console.log("CAPCAP");
-    console.log(result);
-
     res.send(result);
   } catch (error) {
     res.status(501).send("Not Implemented");
@@ -345,6 +342,76 @@ router.patch("/:userId/edit/:id", authenticateJWT, async (req, res) => {
     res.status(200).send({ message: "Succesfully updated poll" });
   } catch (error) {
     res.status(500).send({ error: `Error updating poll: ${error}` });
+  }
+});
+
+// Close a poll
+router.patch("/:userId/close/:id", authenticateJWT, async (req, res) => {
+  const userId = Number(req.params.userId);
+  const pollId = Number(req.params.id);
+
+  try {
+    const rawPoll = await Poll.findByPk(pollId);
+    if (!rawPoll)
+      return res.status(404).send({
+        error: `Error closing poll: Poll with ID ${pollId} not found`,
+      });
+
+    const poll = rawPoll.toJSON();
+    if (poll.creatorId !== userId)
+      return res.status(403).send({
+        error: `Error closing poll: You are not the owner of the poll with ID ${pollId}`,
+      });
+
+    if (poll.status !== "Open")
+      return res.status(403).send({
+        error: `Error closing poll: Cannot close poll with ID ${pollId} because it is not open`,
+      });
+
+    await rawPoll.update({
+      status: "Closed",
+    });
+    res
+      .status(200)
+      .send({ message: `Successfully closed poll with ID ${pollId}` });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .send({ error: `Error closing poll with ID ${pollId}: ${error}` });
+  }
+});
+
+// Delete a draft poll
+router.delete("/:userId/delete/:id", authenticateJWT, async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    const pollId = Number(req.params.id);
+
+    const rawPoll = await Poll.findByPk(pollId);
+    if (!rawPoll)
+      return res.status(404).send({
+        error: `Error deleting draft: Poll with ID ${pollId} not found`,
+      });
+
+    const poll = rawPoll.toJSON();
+    if (poll.creatorId !== userId)
+      return res.status(403).send({
+        error: `Error deleting draft: You are not the owner of the poll with ID ${pollId}`,
+      });
+
+    if (poll.status !== "Draft")
+      return res.status(403).send({
+        error: `Error deleting draft: Cannot delete poll with ID ${pollId} because it is not a draft`,
+      });
+
+    await rawPoll.destroy();
+    res
+      .status(200)
+      .send({ message: `Successfully deleted poll with ID ${pollId}` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ error: `Error deleting draft: ${error}` });
   }
 });
 
