@@ -345,7 +345,7 @@ router.patch("/:userId/edit/:id", authenticateJWT, async (req, res) => {
 });
 
 // Close a poll
-router.patch("/:userId/close/:id", async (req, res) => {
+router.patch("/:userId/close/:id", authenticateJWT, async (req, res) => {
   const userId = Number(req.params.userId);
   const pollId = Number(req.params.id);
 
@@ -378,7 +378,7 @@ router.patch("/:userId/close/:id", async (req, res) => {
 });
 
 // Delete a draft poll
-router.delete("/:userId/delete/:id", async (req, res) => {
+router.delete("/:userId/delete/:id", authenticateJWT, async (req, res) => {
   try {
     const userId = Number(req.params.userId);
     const pollId = Number(req.params.id);
@@ -390,7 +390,6 @@ router.delete("/:userId/delete/:id", async (req, res) => {
       });
   
     const poll = rawPoll.toJSON();
-    console.log(`USER: ${userId} | POLL:`, poll);
     if (poll.creatorId !== userId)
       return res.status(403).send({ 
         error: `Error deleting draft: You are not the owner of the poll with ID ${pollId}`
