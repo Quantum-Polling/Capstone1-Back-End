@@ -98,7 +98,7 @@ const formatResultsFromTable = (rawResults) => {
   finalResults.push(roundResults);
 
   return finalResults;
-}
+};
 
 // Formats calculated result data for insertion into the PollResults table
 // Returns an array of formatted result objects
@@ -115,7 +115,7 @@ const formatResultsForTable = (calculatedResults, options, pollId) => {
         round: round,
         optionId: optionId,
         totalVotes: totalVotes,
-      }
+      };
       results.push(result);
     }
   }
@@ -178,14 +178,15 @@ router.get("/:id", async (req, res) => {
       attributes: {
         include: [
           [
-            Sequelize.fn("concat", 
+            Sequelize.fn(
+              "concat",
               Sequelize.col("creator.firstName"),
               " ",
-              Sequelize.col("creator.lastName"),
-            ), 
-            "creatorName"
+              Sequelize.col("creator.lastName")
+            ),
+            "creatorName",
           ],
-        ]
+        ],
       },
       include: [
         {
@@ -195,7 +196,7 @@ router.get("/:id", async (req, res) => {
         },
         {
           model: PollOption,
-          attributes: ["text"],
+          attributes: ["id", "text"],
         },
       ],
       order: [[{ model: PollOption }, Sequelize.col("id")]],
@@ -352,28 +353,32 @@ router.patch("/:userId/close/:id", authenticateJWT, async (req, res) => {
   try {
     const rawPoll = await Poll.findByPk(pollId);
     if (!rawPoll)
-      return res.status(404).send({ 
-        error: `Error closing poll: Poll with ID ${pollId} not found`
+      return res.status(404).send({
+        error: `Error closing poll: Poll with ID ${pollId} not found`,
       });
-    
+
     const poll = rawPoll.toJSON();
     if (poll.creatorId !== userId)
-      return res.status(403).send({ 
-        error: `Error closing poll: You are not the owner of the poll with ID ${pollId}`
+      return res.status(403).send({
+        error: `Error closing poll: You are not the owner of the poll with ID ${pollId}`,
       });
-    
+
     if (poll.status !== "Open")
-      return res.status(403).send({ 
-        error: `Error closing poll: Cannot close poll with ID ${pollId} because it is not open`
+      return res.status(403).send({
+        error: `Error closing poll: Cannot close poll with ID ${pollId} because it is not open`,
       });
 
     await rawPoll.update({
       status: "Closed",
     });
-    res.status(200).send({ message: `Successfully closed poll with ID ${pollId}` });
+    res
+      .status(200)
+      .send({ message: `Successfully closed poll with ID ${pollId}` });
   } catch (error) {
     console.error(error);
-    res.status(500).send({ error: `Error closing poll with ID ${pollId}: ${error}` });
+    res
+      .status(500)
+      .send({ error: `Error closing poll with ID ${pollId}: ${error}` });
   }
 });
 
@@ -385,23 +390,25 @@ router.delete("/:userId/delete/:id", authenticateJWT, async (req, res) => {
 
     const rawPoll = await Poll.findByPk(pollId);
     if (!rawPoll)
-      return res.status(404).send({ 
-        error: `Error deleting draft: Poll with ID ${pollId} not found`
+      return res.status(404).send({
+        error: `Error deleting draft: Poll with ID ${pollId} not found`,
       });
-  
+
     const poll = rawPoll.toJSON();
     if (poll.creatorId !== userId)
-      return res.status(403).send({ 
-        error: `Error deleting draft: You are not the owner of the poll with ID ${pollId}`
+      return res.status(403).send({
+        error: `Error deleting draft: You are not the owner of the poll with ID ${pollId}`,
       });
-    
+
     if (poll.status !== "Draft")
-      return res.status(403).send({ 
-        error: `Error deleting draft: Cannot delete poll with ID ${pollId} because it is not a draft`
+      return res.status(403).send({
+        error: `Error deleting draft: Cannot delete poll with ID ${pollId} because it is not a draft`,
       });
 
     await rawPoll.destroy();
-    res.status(200).send({ message: `Successfully deleted poll with ID ${pollId}` });
+    res
+      .status(200)
+      .send({ message: `Successfully deleted poll with ID ${pollId}` });
   } catch (error) {
     console.error(error);
     res.status(500).send({ error: `Error deleting draft: ${error}` });
@@ -418,28 +425,34 @@ router.get("/:id/results", async (req, res) => {
         model: PollOption,
         where: {
           pollId: id,
-        }
-      }
+        },
+      },
     });
     if (!poll)
-      return res.status(404).send({error: `Could not find poll with ID ${id}`});
-    
+      return res
+        .status(404)
+        .send({ error: `Could not find poll with ID ${id}` });
+
     // Verify that the poll is in the closed state
     if (poll.status !== "Closed")
-      return res.status(403).send({error: `Poll with ID ${id} has not closed yet!`});
-    
+      return res
+        .status(403)
+        .send({ error: `Poll with ID ${id} has not closed yet!` });
+
     // Extract the options
     const options = poll.poll_options;
     const numOptions = options.length;
     if (numOptions === 0)
-      return res.status(404).send({error: `Could not find options for poll with ID ${id}`});
-    
+      return res
+        .status(404)
+        .send({ error: `Could not find options for poll with ID ${id}` });
+
     // Verify if the results have already been calculated and stored
     const rawResults = await PollResult.findAll({
       where: { pollId: id },
-      order: ['round', 'optionId'],
+      order: ["round", "optionId"],
     });
-    
+
     // If so, return the formatted results from the table
     if (rawResults.length !== 0) {
       const results = formatResultsFromTable(rawResults);
@@ -448,25 +461,21 @@ router.get("/:id/results", async (req, res) => {
         results: results,
       });
     }
-    
+
     // Otherwise, run the calculation algorithm
     const optionIndexes = {};
     options.map((option, index) => (optionIndexes[option.id] = index));
-    
+
     // Get all the votes
     const votes = await PollVote.findAll({
-      where: { 
-        pollId: id, 
-        submitted: true 
+      where: {
+        pollId: id,
+        submitted: true,
       },
-      order: [['userId'], ['rank']],
-      attributes: [
-        ['userId', 'voterId'],
-        'rank',
-        'optionId'
-      ]
-    })
-    
+      order: [["userId"], ["rank"]],
+      attributes: [["userId", "voterId"], "rank", "optionId"],
+    });
+
     // Format the ballots
     const ballots = [];
     const ballot = [];
@@ -478,18 +487,18 @@ router.get("/:id/results", async (req, res) => {
         ballots.push([...ballot]);
         ballot.length = 0;
       }
-      
+
       ballot.push(vote.optionId);
     }
     ballots.push([...ballot]);
-    
+
     let eliminated = new Set();
     const finalResults = [];
-    
+
     // Loop through each round's calculation:
     round: while (true) {
       const roundResults = new Array(numOptions).fill(0);
-      
+
       for (const ballot of ballots) {
         // Check the top option of each ballot
         while (ballot[0]) {
@@ -505,57 +514,155 @@ router.get("/:id/results", async (req, res) => {
           break;
         }
       }
-      const activeBallots = ballots.filter((ballot) => (ballot.length > 0));
-      
+      const activeBallots = ballots.filter((ballot) => ballot.length > 0);
+
       finalResults.push([...roundResults]);
-      
+
       // Check for winner
       for (const total of roundResults)
-        if (total > activeBallots.length / 2)
-          break round;
-        
+        if (total > activeBallots.length / 2) break round;
+
       // Check for least voted option(s)
       const leastVoted = new Set();
       let leastVotes = -1;
       for (let i = 0; i < numOptions; i++) {
         // Skip already eliminated options
-        if (eliminated.has(options[i].id))
-          continue;
-        
+        if (eliminated.has(options[i].id)) continue;
+
         const total = roundResults[i];
         // Tied for least amount of votes
-        if (total === leastVotes)
-          leastVoted.add(options[i].id);
+        if (total === leastVotes) leastVoted.add(options[i].id);
         // New least amount of votes
         else if (leastVotes === -1 || total < leastVotes) {
           leastVotes = total;
           leastVoted.clear();
           leastVoted.add(options[i].id);
         }
+        router.post;
       }
-      
+
       // Check for tie among all remaining options
-      if (leastVoted.size === numOptions - eliminated.size)
-        break round;
-      
+      if (leastVoted.size === numOptions - eliminated.size) break round;
+
       eliminated = new Set([...eliminated, ...leastVoted]);
     }
-    
+
     // Store the results
     const pollResults = formatResultsForTable(finalResults, options, id);
     await PollResult.bulkCreate(pollResults);
-    
+
     // Return the results
     res.status(200).send({
-      message: `Successfully calculated and stored results`, 
+      message: `Successfully calculated and stored results`,
       results: finalResults,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).send({error: `Error getting the results of poll ${id}: ${error}`});
+    res
+      .status(500)
+      .send({ error: `Error getting the results of poll ${id}: ${error}` });
   }
 });
 
-router.post("/:userId/vote/:id", authenticateJWT, async (req, res) => {});
+// Disable a poll (admin only)
+router.patch("/:id/disable", async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (!token) return res.sendStatus(401);
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (!decoded.role || decoded.role.toLowerCase() !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    const poll = await Poll.findByPk(req.params.id);
+    if (!poll) return res.status(404).json({ message: "Poll not found" });
+
+    poll.disabled = true;
+    await poll.save();
+
+    res.status(200).json({ message: "Poll has been disabled" });
+  } catch (error) {
+    console.error("Disable poll error:", error);
+    res.status(500).json({ error: "Failed to disable poll" });
+  }
+});
+
+// Enable a poll (admin only)
+router.patch("/:id/enable", async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (!token) return res.sendStatus(401);
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (!decoded.role || decoded.role.toLowerCase() !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    const poll = await Poll.findByPk(req.params.id);
+    if (!poll) return res.status(404).json({ message: "Poll not found" });
+
+    poll.disabled = false;
+    await poll.save();
+
+    res.status(200).json({ message: "Poll has been enabled" });
+  } catch (error) {
+    console.error("Enable poll error:", error);
+    res.status(500).json({ error: "Failed to enable poll" });
+  }
+});
+
+router.post("/:userId/vote/:id", authenticateJWT, async (req, res) => {
+  try {
+    const authenticatedUserId = req.user.id; // from JWT middleware
+    const requestedUserId = Number(req.params.userId);
+    const pollId = Number(req.params.id);
+    const { rankings } = req.body;
+
+    if (authenticatedUserId !== requestedUserId) {
+      return res.status(403).json({ message: "Forbidden: User mismatch" });
+    }
+
+    // Check if user already voted
+    const existingVotes = await PollVote.findOne({
+      where: { pollId, userId: requestedUserId, submitted: true },
+    });
+    if (existingVotes) {
+      return res.status(400).json({ message: "You have already voted." });
+    }
+
+    // Validate and create votes
+    for (let i = 0; i < rankings.length; i++) {
+      const optionId = rankings[i].optionId;
+      const rank = rankings[i].rank;
+
+      const option = await PollOption.findOne({
+        where: { id: optionId, pollId },
+      });
+
+      if (!option) {
+        console.error(
+          `❌ Option ${optionId} does not belong to poll ${pollId}`
+        );
+        return res.status(400).json({
+          message: `Option ID ${optionId} does not belong to poll ${pollId}`,
+        });
+      }
+
+      await PollVote.create({
+        pollId,
+        userId: requestedUserId,
+        optionId,
+        rank,
+        submitted: true,
+      });
+    }
+
+    res.status(201).json({ message: "✅ Vote recorded successfully" });
+  } catch (error) {
+    console.error("❌ Error submitting vote:", error);
+    res.status(500).json({ message: "Error submitting vote" });
+  }
+});
 
 module.exports = router;
