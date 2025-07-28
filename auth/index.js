@@ -31,6 +31,7 @@ const authenticateJWT = (req, res, next) => {
 // Auth0 authentication route
 router.post("/auth0", async (req, res) => {
   try {
+
     const { auth0Id, firstName, lastName, email, username } = req.body;
 
     if (!auth0Id) {

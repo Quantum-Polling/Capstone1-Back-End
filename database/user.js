@@ -49,6 +49,11 @@ const User = db.define("user", {
     defaultValue: false,
     allowNull: false,
   },
+  username: {
+  type: DataTypes.STRING,
+  allowNull: false,
+  unique: true,
+},
 });
 
 // Instance method to check password
