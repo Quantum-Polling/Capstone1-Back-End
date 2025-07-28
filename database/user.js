@@ -50,9 +50,9 @@ const User = db.define("user", {
     allowNull: false,
   },
   username: {
-  type: DataTypes.STRING,
-  allowNull: false,
-  unique: true,
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true,
 },
 });
 
